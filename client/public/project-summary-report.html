@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Civic Issue Management System Report</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+        color: #1f2937;
+        line-height: 1.55;
+      }
+      h1,
+      h2 {
+        color: #0f172a;
+        margin-bottom: 10px;
+      }
+      h1 {
+        font-size: 28px;
+        border-bottom: 3px solid #0d9488;
+        padding-bottom: 8px;
+      }
+      h2 {
+        font-size: 20px;
+        margin-top: 28px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      ul,
+      ol {
+        margin: 8px 0 8px 24px;
+      }
+      li {
+        margin: 5px 0;
+      }
+      .meta {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        padding: 16px;
+        border-radius: 10px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        margin-right: 8px;
+        border-radius: 999px;
+        background: #ecfeff;
+        color: #155e75;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .section {
+        page-break-inside: avoid;
+      }
+      code {
+        background: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Civic Issue Reporting and Management System</h1>
+
+    <div class="meta">
+      <p><strong>Project Type:</strong> Full-stack civic issue reporting platform</p>
+      <p><strong>Frontend:</strong> Next.js, React, Tailwind CSS</p>
+      <p><strong>Backend:</strong> Node.js, Express, MongoDB, Mongoose</p>
+      <p><strong>Authentication:</strong> JWT-based auth with Citizen and Admin roles</p>
+      <p><strong>Current Local URLs:</strong> Frontend on <code>localhost:3000</code>, Backend on <code>localhost:5001</code></p>
+    </div>
+
+    <div class="section">
+      <h2>How To Use The Platform</h2>
+      <ol>
+        <li>Open the frontend on <code>http://localhost:3000</code>.</li>
+        <li>Create an account from the Register page.</li>
+        <li>Login using your email and password.</li>
+        <li>Citizens can report issues from the Citizen Desk.</li>
+        <li>Admins can manage all issues from the Admin Control dashboard.</li>
+      </ol>
+    </div>
+
+    <div class="section">
+      <h2>Working Features</h2>
+      <p>
+        <span class="badge">Auth</span>
+        <span class="badge">Citizen</span>
+        <span class="badge">Admin</span>
+        <span class="badge">CRUD</span>
+      </p>
+      <ul>
+        <li>User registration</li>
+        <li>User login</li>
+        <li>Admin registration</li>
+        <li>Admin login</li>
+        <li>JWT-based authentication</li>
+        <li>MongoDB database connection</li>
+        <li>Citizen issue creation</li>
+        <li>Citizen issue listing</li>
+        <li>Citizen issue update</li>
+        <li>Citizen issue delete</li>
+        <li>Citizen issue status tracking</li>
+        <li>Citizen notifications list</li>
+        <li>Notification mark as read</li>
+        <li>Admin dashboard statistics cards</li>
+        <li>Admin all-issues table view</li>
+        <li>Admin filter by date</li>
+        <li>Admin filter by category</li>
+        <li>Admin filter by status</li>
+        <li>Admin bulk status update</li>
+        <li>Admin bulk department assignment</li>
+        <li>Admin individual issue update</li>
+        <li>Admin individual issue delete</li>
+        <li>Department assignment flow</li>
+        <li>Map section with issue location data</li>
+        <li>Google Maps fallback UI</li>
+        <li>Socket.IO realtime wiring</li>
+        <li>Auto-resolve cron job code</li>
+        <li>Responsive modern UI</li>
+        <li>Frontend ready for Vercel deployment</li>
+        <li>Backend ready for Render or Railway deployment</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Features That Need Extra Setup</h2>
+      <ul>
+        <li>Real Cloudinary image upload requires Cloudinary environment variables</li>
+        <li>Live Google Maps markers require a Google Maps API key</li>
+        <li>Production cron behavior requires backend deployment on a live host</li>
+        <li>Production realtime verification should be tested after deployment</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Deployment Notes</h2>
+      <ul>
+        <li>Deploy the frontend from the <code>client</code> folder on Vercel</li>
+        <li>Deploy the backend separately on Render or Railway</li>
+        <li>Set <code>NEXT_PUBLIC_API_BASE_URL</code> in frontend environment variables</li>
+        <li>Use MongoDB Atlas for the production database</li>
+      </ul>
+    </div>
+  </body>
+</html>
