@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "routes": [
+    {
+      "src": "/api/(?<path>.*)",
+      "dest": "/api/index.js?path=$path"
+    },
+    {
+      "src": "/api",
+      "dest": "/api/index.js"
+    }
+  ]
+}
