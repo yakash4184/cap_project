@@ -1,0 +1,62 @@
+Civic Issue Reporting and Management System
+==========================================
+
+Project Type:
+Full-stack civic issue reporting platform
+
+Stack:
+- Frontend: Next.js, React, Tailwind CSS
+- Backend: Node.js, Express, MongoDB, Mongoose
+- Authentication: JWT-based auth with Citizen and Admin roles
+- Current Local URLs: Frontend on localhost:3000, Backend on localhost:5001
+
+How To Use The Platform:
+1. Open the frontend on http://localhost:3000
+2. Create an account from the Register page
+3. Login using your email and password
+4. Citizens can report issues from the Citizen Desk
+5. Admins can manage all issues from the Admin Control dashboard
+
+Working Features:
+1. User registration
+2. User login
+3. Admin registration
+4. Admin login
+5. JWT-based authentication
+6. MongoDB database connection
+7. Citizen issue creation
+8. Citizen issue listing
+9. Citizen issue update
+10. Citizen issue delete
+11. Citizen issue status tracking
+12. Citizen notifications list
+13. Notification mark as read
+14. Admin dashboard statistics cards
+15. Admin all-issues table view
+16. Admin filter by date
+17. Admin filter by category
+18. Admin filter by status
+19. Admin bulk status update
+20. Admin bulk department assignment
+21. Admin individual issue update
+22. Admin individual issue delete
+23. Department assignment flow
+24. Map section with issue location data
+25. Google Maps fallback UI
+26. Socket.IO realtime wiring
+27. Auto-resolve cron job code
+28. Responsive modern UI
+29. Frontend ready for Vercel deployment
+30. Backend ready for Render or Railway deployment
+
+Features That Need Extra Setup:
+1. Real Cloudinary image upload requires Cloudinary environment variables
+2. Live Google Maps markers require a Google Maps API key
+3. Production cron behavior requires backend deployment on a live host
+4. Production realtime verification should be tested after deployment
+
+Deployment Notes:
+1. Deploy the frontend from the client folder on Vercel
+2. Deploy the backend separately on Render or Railway
+3. Set NEXT_PUBLIC_API_BASE_URL in frontend environment variables
+4. Use MongoDB Atlas for the production database
