@@ -91,3 +91,5 @@ npm run dev:client
 - `AUTO_RESOLVE_OLD_ISSUES=true` enables the daily cron job.
 - `AUTO_RESOLVE_DAYS=15` controls the stale issue threshold.
 - Without Cloudinary credentials, the API accepts a direct `imageUrl` in the request body for development.
+
+# Capstone_Project-
