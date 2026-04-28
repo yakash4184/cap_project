@@ -1,52 +1,137 @@
 # Civic Issue Reporting and Management System
 
-Production-style full-stack civic issue platform with citizen reporting, admin workflows, geolocation, image uploads, notifications, and optional realtime updates.
+A full-stack capstone project for reporting, tracking, and resolving day-to-day civic issues such as potholes, garbage overflow, drainage problems, water complaints, and broken streetlights.
 
-## Stack
+## Project Summary
 
-- Frontend: Next.js App Router, React, Tailwind CSS
-- Backend: Node.js, Express, MongoDB, Mongoose
-- Auth: JWT with citizen/admin roles
-- Uploads: Cloudinary-ready upload pipeline
+Local governments often struggle to identify and resolve civic complaints quickly because citizens do not always have a simple, transparent reporting system. This project addresses that problem with a citizen-facing reporting platform and an admin-facing operations dashboard.
+
+Citizens can submit issues with text, coordinates, address details, and image evidence. Municipal staff can view those reports, filter them, assign departments, update statuses, and monitor resolution activity from a centralized interface.
+
+## Problem Background
+
+Many civic issues remain unresolved because reporting is fragmented, manual, or difficult to track. Residents may repeatedly encounter the same issue without any visibility into whether it has been acknowledged, assigned, or resolved.
+
+This project is designed to improve:
+
+- citizen participation
+- issue visibility
+- municipal workflow tracking
+- accountability through status updates and notifications
+
+## Objective
+
+The objective of this system is to create a practical digital workflow where:
+
+- citizens can report issues easily
+- location and evidence can be attached to reports
+- administrators can manage incoming civic complaints efficiently
+- issues can move through a visible resolution pipeline
+- notifications and status tracking improve transparency
+
+## Current Project Type
+
+This is currently a responsive web platform, not a dedicated mobile app. It supports cross-device browser use and provides separate citizen and admin experiences.
+
+## Tech Stack
+
+- Frontend: Next.js 15, React 18, Tailwind CSS
+- Backend: Node.js, Express.js
+- Database: MongoDB Atlas with Mongoose
+- Authentication: JWT
+- Uploads: Multer + Cloudinary-ready upload service
 - Maps: Google Maps JavaScript API
-- Realtime: Socket.IO
-- Automation: Daily cron hook for auto-resolving stale pending issues
+- Realtime Hooks: Socket.IO
+- Automation: node-cron
+- Deployment: Vercel frontend and Vercel backend
 
-## Project Structure
+## Folder Structure
 
 ```text
-civic-issue-management-system/
-  client/    Next.js frontend
-  server/    Express API
+cap_project/
+  client/   Frontend application
+  server/   Backend API
 ```
 
-## Quick Start
+## Current Implemented Features
 
-1. Install dependencies:
+### Citizen Features
 
-```bash
-npm install
-npm install --workspace client
-npm install --workspace server
-```
+- User registration
+- User login
+- Citizen dashboard
+- Submit issue with title, description, category, address, latitude, longitude, and image
+- Upload image file or provide image URL
+- Browser GPS support to fill coordinates
+- Track submitted issues
+- Filter own issues by status
+- Edit issue when allowed by workflow rules
+- Delete issue
+- Receive issue notifications
+- Mark notifications as read
+- View issue locations on a map
 
-2. Copy env files:
+### Admin Features
 
-```bash
-cp client/.env.example client/.env.local
-cp server/.env.example server/.env
-```
+- Admin registration
+- Admin login
+- Admin dashboard with issue statistics
+- Filter issues by date range
+- Filter issues by category
+- Filter issues by status
+- Bulk status update
+- Bulk department assignment
+- Edit individual issue details
+- Delete issues
+- Monitor stale pending issues
+- View issue metadata and geolocation
 
-3. Fill MongoDB, JWT, Cloudinary, and Google Maps keys.
+### Backend Features
 
-4. Run backend and frontend in separate terminals:
+- JWT-based authentication
+- Role-based access for `user` and `admin`
+- Protected issue APIs
+- Issue CRUD operations
+- Admin APIs for filter, stats, and bulk update
+- Notification APIs
+- MongoDB persistence with Mongoose models
+- Issue status timeline
+- Notification generation on status changes
+- Socket.IO issue update hooks
+- Auto-resolve job for old pending issues
+- Vercel-compatible serverless API entry
 
-```bash
-npm run dev:server
-npm run dev:client
-```
+## Supported Categories
 
-## API Summary
+- garbage
+- road
+- electricity
+- water
+- drainage
+- streetlight
+- sanitation
+- other
+
+## Supported Departments
+
+- Sanitation
+- Road Works
+- Electricity Board
+- Water Department
+- Urban Services
+- Zonal Response Team
+
+## Current Workflow
+
+1. A citizen signs up or logs in.
+2. The citizen submits an issue with description, category, image, and location.
+3. The issue is stored in MongoDB with default `pending` status.
+4. Admin users review the queue from the admin dashboard.
+5. Admins filter, assign departments, and update issue statuses.
+6. Status changes create notifications for the reporting citizen.
+7. Citizens can revisit their dashboard to track progress.
+
+## API Endpoints
 
 ### Auth
 
@@ -72,24 +157,195 @@ npm run dev:client
 - `GET /api/notifications`
 - `PUT /api/notifications/:id/read`
 
+### Health
+
+- `GET /api/health`
+
+## Local Setup
+
+### Install Dependencies
+
+```bash
+npm install
+npm install --workspace client
+npm install --workspace server
+```
+
+### Frontend Environment
+
+Create `client/.env.local`:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5001/api
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
+```
+
+### Backend Environment
+
+Create `server/.env`:
+
+```env
+PORT=5001
+CLIENT_URL=http://localhost:3000
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_secret
+JWT_EXPIRES_IN=7d
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+AUTO_RESOLVE_OLD_ISSUES=false
+AUTO_RESOLVE_DAYS=15
+```
+
+### Run Locally
+
+Start backend:
+
+```bash
+npm run dev:server
+```
+
+Start frontend:
+
+```bash
+npm run dev:client
+```
+
 ## Deployment
 
-- Frontend: Vercel
-- Backend: Render or Railway
-- Database: MongoDB Atlas
-- Uploads: Cloudinary
+### Frontend Deployment
 
-### Vercel Notes
+- Platform: Vercel
+- Root Directory: `client`
+- Required environment variable:
 
-- Import this repository into Vercel.
-- Set the Vercel Root Directory to `client`.
-- Add `NEXT_PUBLIC_API_BASE_URL` in Vercel project environment variables.
-- Deploy the Express backend separately on Render or Railway, then point the frontend env var to that backend URL.
+```env
+NEXT_PUBLIC_API_BASE_URL=https://your-backend-domain.vercel.app/api
+```
+
+### Backend Deployment
+
+- Platform: Vercel
+- Root Directory: `server`
+- Install Command:
+
+```bash
+npm install --prefix=..
+```
+
+- Required backend environment variables:
+
+```env
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_secret
+JWT_EXPIRES_IN=7d
+CLIENT_URL=https://your-frontend-domain.vercel.app
+AUTO_RESOLVE_OLD_ISSUES=false
+AUTO_RESOLVE_DAYS=15
+```
+
+### Current Deployed URLs
+
+- Frontend: `https://cap-project-client-one.vercel.app`
+- Backend: `https://cap-project-server-xtx2.vercel.app`
+- Backend health check: `https://cap-project-server-xtx2.vercel.app/api/health`
+
+## Feature Review Against the Project Description
+
+The given capstone description expects a mobile-first civic issue system with smart routing, prioritization, multimedia reporting, live mapping, analytics, and transparent status updates. The current project already covers a strong MVP, but it does not yet implement every advanced requirement.
+
+### Fully or Strongly Covered
+
+- Citizen issue reporting
+- Image-based evidence
+- Location coordinates in reports
+- Admin management dashboard
+- Category and status filtering
+- Department assignment
+- Citizen issue tracking
+- Notifications on progress changes
+- Interactive issue map support
+- Responsive cross-device web usage
+- Backend API structure for future extension
+
+### Partially Covered
+
+- Automatic location tagging
+  GPS support exists, but reporting is not fully automatic in every case.
+
+- Realtime updates
+  Socket.IO hooks exist, but persistent realtime behavior is limited on Vercel serverless hosting.
+
+- Analytics and reporting
+  Basic issue counts and category summaries exist, but advanced municipal performance analytics are not implemented.
+
+- Multimedia handling at scale
+  Image upload support exists, but high-volume media optimization and processing pipelines are not implemented.
+
+### Missing Compared to the Full Description
+
+- Voice explanation or audio note upload
+- Automated routing engine based on metadata and location
+- Priority scoring or urgency inference
+- Heatmap or hotspot visualization
+- Explicit acknowledgment stage
+- Citizen-admin communication thread
+- Departmental response-time analytics
+- Trend analytics and operational effectiveness reporting
+- Dedicated mobile app build
+- Scalable queue or background processing architecture for spikes
+
+## What Is Missing in Simple Terms
+
+Right now the project works well as a civic issue reporting MVP, but it is still missing the "smart city operations" layer. The main missing upgrades are:
+
+- automatic department routing
+- urgency and priority detection
+- voice reporting
+- advanced analytics
+- deeper communication workflow
+- hotspot-based map intelligence
+
+## Suggested Future Improvements
+
+- Add voice note recording for issue submission
+- Add automatic routing based on category and coordinates
+- Add issue priority scoring
+- Add heatmap view for high-density complaint areas
+- Add acknowledgment and comment thread workflow
+- Add dashboard charts for response time and department performance
+- Add SLA tracking
+- Add native mobile app or PWA improvements
+- Move realtime features to infrastructure better suited for long-lived socket connections
+
+## Project Strengths
+
+- Clear separation between citizen and admin workflows
+- Strong full-stack integration
+- Practical civic use case
+- Authentication and authorization implemented
+- Database-backed issue lifecycle
+- Deployed frontend and backend
+- Good foundation for future capstone expansion
+
+## Limitations
+
+- No audio support
+- No auto-routing
+- No priority engine
+- Limited analytics depth
+- Realtime support depends on hosting constraints
+- Web-first instead of mobile-app-first
+
+## Final Evaluation
+
+This project already demonstrates a solid and functional civic issue management MVP. It successfully covers reporting, tracking, admin triage, notifications, map integration, and deployment. From a capstone perspective, it shows a meaningful real-world problem, a complete working product, and a strong technical foundation.
+
+The biggest gap between the current implementation and the full project description is not basic functionality. The biggest gap is intelligent automation, richer analytics, and more advanced citizen-government interaction features.
 
 ## Notes
 
-- `AUTO_RESOLVE_OLD_ISSUES=true` enables the daily cron job.
-- `AUTO_RESOLVE_DAYS=15` controls the stale issue threshold.
-- Without Cloudinary credentials, the API accepts a direct `imageUrl` in the request body for development.
-
-# Capstone_Project-
+- `AUTO_RESOLVE_OLD_ISSUES=true` enables cron-based stale issue resolution
+- `AUTO_RESOLVE_DAYS=15` defines the stale pending threshold
+- Without Cloudinary credentials, development can still use a direct `imageUrl`
+- Without a Google Maps API key, the map falls back to coordinate-based location display
