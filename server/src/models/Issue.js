@@ -53,6 +53,20 @@ const issueSchema = new mongoose.Schema(
       type: String,
       default: "Unassigned",
     },
+    routingSource: {
+      type: String,
+      enum: ["manual", "auto"],
+      default: "auto",
+    },
+    priorityScore: {
+      type: Number,
+      default: 0,
+    },
+    priorityLevel: {
+      type: String,
+      enum: ["low", "medium", "high", "critical"],
+      default: "medium",
+    },
     reportedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -78,6 +92,6 @@ const issueSchema = new mongoose.Schema(
 );
 
 issueSchema.index({ createdAt: -1, status: 1, category: 1 });
+issueSchema.index({ priorityLevel: 1, assignedDepartment: 1, createdAt: -1 });
 
 export const Issue = mongoose.model("Issue", issueSchema);
-

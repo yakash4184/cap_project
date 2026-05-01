@@ -1,5 +1,9 @@
 import { User } from "../models/User.js";
 import { generateToken } from "../utils/generateToken.js";
+import {
+  assertAdminRegistrationAuthorized,
+  assertPublicRegistrationAllowed,
+} from "../utils/adminRegistration.js";
 
 export const registerUser = async (req, res, next) => {
   try {
@@ -8,6 +12,8 @@ export const registerUser = async (req, res, next) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Name, email, and password are required" });
     }
+
+    assertPublicRegistrationAllowed(role);
 
     const existingUser = await User.findOne({ email });
 
@@ -19,7 +25,50 @@ export const registerUser = async (req, res, next) => {
       name,
       email,
       password,
-      role: role === "admin" ? "admin" : "user",
+      role: "user",
+    });
+
+    const token = generateToken(user);
+
+    res.status(201).json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const registerAdmin = async (req, res, next) => {
+  try {
+    const { name, email, password, adminRegistrationSecret } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required" });
+    }
+
+    assertAdminRegistrationAuthorized({
+      configuredSecret: process.env.ADMIN_REGISTRATION_SECRET,
+      providedSecret:
+        req.headers["x-admin-registration-secret"] || adminRegistrationSecret || "",
+    });
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(409).json({ message: "Email already registered" });
+    }
+
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role: "admin",
     });
 
     const token = generateToken(user);
@@ -67,4 +116,3 @@ export const loginUser = async (req, res, next) => {
     next(error);
   }
 };
-

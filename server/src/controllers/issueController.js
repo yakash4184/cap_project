@@ -4,6 +4,12 @@ import { Issue } from "../models/Issue.js";
 import { createNotification } from "../services/notificationService.js";
 import { emitIssueUpdated } from "../services/socketService.js";
 import { uploadIssueImage } from "../services/uploadService.js";
+import { calculatePriority, resolveDepartment } from "../utils/issueMetadata.js";
+import {
+  parseIssueCoordinates,
+  validateCreateIssuePayload,
+  validateUpdateIssuePayload,
+} from "../utils/issueValidation.js";
 
 const buildFilters = (query) => {
   const filters = {};
@@ -48,21 +54,44 @@ export const createIssue = async (req, res, next) => {
       });
     }
 
+    validateCreateIssuePayload({
+      title,
+      description,
+      category,
+      assignedDepartment,
+    });
+
+    const coordinates = parseIssueCoordinates(lat, lng);
+    const routing = resolveDepartment({
+      category,
+      address,
+      assignedDepartment,
+    });
+    const priority = calculatePriority({
+      title,
+      description,
+      category,
+    });
     let uploadedImageUrl = imageUrl || "";
 
     if (req.file) {
-      uploadedImageUrl = await uploadIssueImage(req.file);
+      uploadedImageUrl = await uploadIssueImage(req.file, {
+        fallbackUrl: imageUrl || "",
+      });
     }
 
     const issue = await Issue.create({
       title,
       description,
       category,
-      assignedDepartment: assignedDepartment || "Unassigned",
+      assignedDepartment: routing.department,
+      routingSource: routing.routingSource,
+      priorityScore: priority.priorityScore,
+      priorityLevel: priority.priorityLevel,
       imageUrl: uploadedImageUrl,
       location: {
-        lat: Number(lat),
-        lng: Number(lng),
+        lat: coordinates.lat,
+        lng: coordinates.lng,
         address: address || "",
       },
       reportedBy: req.user._id,
@@ -152,6 +181,12 @@ export const updateIssue = async (req, res, next) => {
       return res.status(403).json({ message: "Forbidden" });
     }
 
+    validateUpdateIssuePayload({
+      category: req.body.category,
+      status: req.body.status,
+      assignedDepartment: req.body.assignedDepartment,
+    });
+
     const nextStatus = req.body.status || issue.status;
     const previousStatus = issue.status;
 
@@ -169,6 +204,7 @@ export const updateIssue = async (req, res, next) => {
 
     if (req.body.assignedDepartment && isAdmin) {
       issue.assignedDepartment = req.body.assignedDepartment;
+      issue.routingSource = "manual";
     }
 
     if (req.body.status && isAdmin) {
@@ -182,15 +218,42 @@ export const updateIssue = async (req, res, next) => {
       req.body.lng !== null &&
       (isAdmin || issue.status === "pending")
     ) {
+      const coordinates = parseIssueCoordinates(req.body.lat, req.body.lng);
       issue.location = {
-        lat: Number(req.body.lat),
-        lng: Number(req.body.lng),
+        lat: coordinates.lat,
+        lng: coordinates.lng,
         address: req.body.address || issue.location.address || "",
       };
     }
 
     if (req.body.imageUrl) {
       issue.imageUrl = req.body.imageUrl;
+    }
+
+    if (
+      req.body.category !== undefined ||
+      req.body.description !== undefined ||
+      req.body.title !== undefined
+    ) {
+      const routing = resolveDepartment({
+        category: issue.category,
+        address: issue.location.address,
+        assignedDepartment:
+          issue.routingSource === "manual" ? issue.assignedDepartment : undefined,
+      });
+      const priority = calculatePriority({
+        title: issue.title,
+        description: issue.description,
+        category: issue.category,
+      });
+
+      if (issue.routingSource !== "manual") {
+        issue.assignedDepartment = routing.department;
+        issue.routingSource = routing.routingSource;
+      }
+
+      issue.priorityScore = priority.priorityScore;
+      issue.priorityLevel = priority.priorityLevel;
     }
 
     if (previousStatus !== nextStatus) {

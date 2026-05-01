@@ -1,15 +1,21 @@
 import streamifier from "streamifier";
 
 import { cloudinary, isCloudinaryConfigured } from "../config/cloudinary.js";
+import { ApiError } from "../utils/ApiError.js";
 
-export const uploadIssueImage = async (file) => {
+export const uploadIssueImage = async (file, { fallbackUrl = "" } = {}) => {
   if (!file) {
-    return "";
+    return fallbackUrl || "";
   }
 
   if (!isCloudinaryConfigured) {
-    throw new Error(
-      "Cloudinary is not configured. Provide imageUrl in development or configure Cloudinary."
+    if (fallbackUrl) {
+      return fallbackUrl;
+    }
+
+    throw new ApiError(
+      400,
+      "Image file uploads are unavailable because Cloudinary is not configured. Please provide an image URL or configure Cloudinary."
     );
   }
 
@@ -32,4 +38,3 @@ export const uploadIssueImage = async (file) => {
     streamifier.createReadStream(file.buffer).pipe(uploadStream);
   });
 };
-

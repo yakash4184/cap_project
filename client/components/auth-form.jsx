@@ -15,7 +15,6 @@ export function AuthForm({ mode = "login" }) {
     name: "",
     email: "",
     password: "",
-    role: "user",
   });
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,7 +53,7 @@ export function AuthForm({ mode = "login" }) {
         <p className="mt-4 text-base leading-7 text-slate-600">
           {isLogin
             ? "Log in as a citizen or admin to track, assign, and resolve reported issues."
-            : "Citizen accounts can submit and track issues. Admin accounts can manage workflows."}
+            : "Citizen accounts can submit and track issues. Admin accounts must be provisioned securely outside public signup."}
         </p>
 
         <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
@@ -109,25 +108,6 @@ export function AuthForm({ mode = "login" }) {
               placeholder="At least 6 characters"
             />
           </label>
-
-          {!isLogin ? (
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-slate-600">Role</span>
-              <select
-                value={formState.role}
-                onChange={(event) =>
-                  setFormState((currentState) => ({
-                    ...currentState,
-                    role: event.target.value,
-                  }))
-                }
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
-              >
-                <option value="user">Citizen</option>
-                <option value="admin">Admin</option>
-              </select>
-            </label>
-          ) : null}
 
           {error ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">

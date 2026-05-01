@@ -6,6 +6,7 @@ import morgan from "morgan";
 
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import { runAutoResolveCron } from "./controllers/cronController.js";
 import issueRoutes from "./routes/issueRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
@@ -31,6 +32,7 @@ app.get("/api/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+app.get("/api/cron/auto-resolve", runAutoResolveCron);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/issues", issueRoutes);
@@ -41,4 +43,3 @@ app.use(notFound);
 app.use(errorHandler);
 
 export default app;
-

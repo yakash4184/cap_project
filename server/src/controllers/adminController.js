@@ -1,8 +1,9 @@
 import { Issue } from "../models/Issue.js";
 import { createNotification } from "../services/notificationService.js";
 import { emitIssueUpdated } from "../services/socketService.js";
+import { validateDepartment, validateIssueStatus } from "../utils/issueRules.js";
 
-const buildAdminQuery = ({ date, from, to, status, category }) => {
+const buildAdminQuery = ({ date, from, to, status, category, priorityLevel, department }) => {
   const query = {};
 
   if (status) {
@@ -11,6 +12,14 @@ const buildAdminQuery = ({ date, from, to, status, category }) => {
 
   if (category) {
     query.category = category;
+  }
+
+  if (priorityLevel) {
+    query.priorityLevel = priorityLevel;
+  }
+
+  if (department) {
+    query.assignedDepartment = department;
   }
 
   if (date || from || to) {
@@ -49,7 +58,14 @@ export const filterIssues = async (req, res, next) => {
 export const getAdminStats = async (req, res, next) => {
   try {
     const staleThresholdDays = Number(process.env.AUTO_RESOLVE_DAYS || 15);
-    const [totalIssues, pendingIssues, inProgressIssues, resolvedIssues, stalePendingIssues] =
+    const [
+      totalIssues,
+      pendingIssues,
+      inProgressIssues,
+      resolvedIssues,
+      stalePendingIssues,
+      issuesForAnalytics,
+    ] =
       await Promise.all([
         Issue.countDocuments(),
         Issue.countDocuments({ status: "pending" }),
@@ -61,7 +77,54 @@ export const getAdminStats = async (req, res, next) => {
             $lte: new Date(Date.now() - staleThresholdDays * 24 * 60 * 60 * 1000),
           },
         }),
+        Issue.find().select(
+          "category status assignedDepartment priorityLevel createdAt updatedAt statusTimeline"
+        ),
       ]);
+
+    const priorityCounts = {
+      low: 0,
+      medium: 0,
+      high: 0,
+      critical: 0,
+    };
+    const departmentPerformance = {};
+    const trendByCategory = {};
+    let responseHoursTotal = 0;
+    let responseHoursCount = 0;
+    let resolutionHoursTotal = 0;
+    let resolutionHoursCount = 0;
+
+    for (const issue of issuesForAnalytics) {
+      priorityCounts[issue.priorityLevel || "medium"] += 1;
+
+      const department = issue.assignedDepartment || "Unassigned";
+      departmentPerformance[department] ??= {
+        total: 0,
+        resolved: 0,
+      };
+      departmentPerformance[department].total += 1;
+      if (issue.status === "resolved") {
+        departmentPerformance[department].resolved += 1;
+      }
+
+      trendByCategory[issue.category] = (trendByCategory[issue.category] || 0) + 1;
+
+      const firstAction = issue.statusTimeline?.find(
+        (entry) => entry.status && entry.status !== "pending"
+      );
+      if (firstAction?.changedAt) {
+        responseHoursTotal +=
+          (new Date(firstAction.changedAt) - new Date(issue.createdAt)) / 36e5;
+        responseHoursCount += 1;
+      }
+
+      if (issue.status === "resolved") {
+        resolutionHoursTotal +=
+          (new Date(issue.updatedAt) - new Date(issue.createdAt)) / 36e5;
+        resolutionHoursCount += 1;
+      }
+    }
 
     res.json({
       totalIssues,
@@ -69,6 +132,15 @@ export const getAdminStats = async (req, res, next) => {
       inProgressIssues,
       resolvedIssues,
       stalePendingIssues,
+      priorityCounts,
+      averageFirstResponseHours: responseHoursCount
+        ? Number((responseHoursTotal / responseHoursCount).toFixed(1))
+        : 0,
+      averageResolutionHours: resolutionHoursCount
+        ? Number((resolutionHoursTotal / resolutionHoursCount).toFixed(1))
+        : 0,
+      departmentPerformance,
+      trendByCategory,
     });
   } catch (error) {
     next(error);
@@ -81,6 +153,14 @@ export const bulkUpdateIssues = async (req, res, next) => {
 
     if (!Array.isArray(issueIds) || issueIds.length === 0) {
       return res.status(400).json({ message: "issueIds array is required" });
+    }
+
+    if (status) {
+      validateIssueStatus(status);
+    }
+
+    if (assignedDepartment) {
+      validateDepartment(assignedDepartment);
     }
 
     const issues = await Issue.find({ _id: { $in: issueIds } }).populate(
@@ -97,6 +177,7 @@ export const bulkUpdateIssues = async (req, res, next) => {
 
       if (assignedDepartment) {
         issue.assignedDepartment = assignedDepartment;
+        issue.routingSource = "manual";
       }
 
       if (status && previousStatus !== status) {

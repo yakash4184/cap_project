@@ -13,14 +13,22 @@ import { SectionCard } from "@/components/section-card";
 import { adminApi, issueApi } from "@/lib/api";
 import { getStoredSession } from "@/lib/auth";
 import { demoIssues, demoStats } from "@/lib/demo-data";
-import { departments, issueCategories, issueStatuses } from "@/lib/constants";
+import {
+  departments,
+  issueCategories,
+  issueStatuses,
+  priorityLevels,
+} from "@/lib/constants";
 
 const initialFilters = {
   from: "",
   to: "",
   status: "",
   category: "",
+  priorityLevel: "",
+  department: "",
 };
+const LIVE_SYNC_INTERVAL_MS = 20000;
 
 export default function AdminDashboardPage() {
   const [session, setSession] = useState(null);
@@ -45,7 +53,9 @@ export default function AdminDashboardPage() {
       return;
     }
 
-    const loadAdminData = async () => {
+    let pollTimer;
+
+    const loadAdminData = async ({ silent = false } = {}) => {
       try {
         const [liveStats, liveIssues] = await Promise.all([
           adminApi.getStats(storedSession.token),
@@ -56,11 +66,25 @@ export default function AdminDashboardPage() {
         setIssues(liveIssues);
         setNotice("");
       } catch (error) {
-        setNotice(error.message || "Live admin data unavailable, showing demo queue.");
+        if (!silent) {
+          setNotice(error.message || "Live admin data unavailable, showing demo queue.");
+        }
       }
     };
 
     loadAdminData();
+
+    pollTimer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        loadAdminData({ silent: true });
+      }
+    }, LIVE_SYNC_INTERVAL_MS);
+
+    return () => {
+      if (pollTimer) {
+        window.clearInterval(pollTimer);
+      }
+    };
   }, []);
 
   const runFilter = async () => {
@@ -299,7 +323,7 @@ export default function AdminDashboardPage() {
           </button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
           <label>
             <span className="mb-2 block text-sm font-medium text-slate-600">From</span>
             <input
@@ -368,8 +392,76 @@ export default function AdminDashboardPage() {
               ))}
             </select>
           </label>
+          <label>
+            <span className="mb-2 block text-sm font-medium text-slate-600">Priority</span>
+            <select
+              value={filters.priorityLevel}
+              onChange={(event) =>
+                setFilters((currentFilters) => ({
+                  ...currentFilters,
+                  priorityLevel: event.target.value,
+                }))
+              }
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3"
+            >
+              <option value="">All priorities</option>
+              {priorityLevels.map((priorityLevel) => (
+                <option key={priorityLevel} value={priorityLevel}>
+                  {priorityLevel}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className="mb-2 block text-sm font-medium text-slate-600">Department</span>
+            <select
+              value={filters.department}
+              onChange={(event) =>
+                setFilters((currentFilters) => ({
+                  ...currentFilters,
+                  department: event.target.value,
+                }))
+              }
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3"
+            >
+              <option value="">All departments</option>
+              {departments.map((department) => (
+                <option key={department} value={department}>
+                  {department}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       </SectionCard>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <SectionCard className="bg-white/80">
+          <p className="text-sm text-slate-500">Avg first response</p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-ink">
+            {stats.averageFirstResponseHours ?? 0}h
+          </p>
+        </SectionCard>
+        <SectionCard className="bg-white/80">
+          <p className="text-sm text-slate-500">Avg resolution</p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-ink">
+            {stats.averageResolutionHours ?? 0}h
+          </p>
+        </SectionCard>
+        <SectionCard className="bg-white/80">
+          <p className="text-sm text-slate-500">High priority</p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-ink">
+            {(stats.priorityCounts?.high || 0) + (stats.priorityCounts?.critical || 0)}
+          </p>
+        </SectionCard>
+        <SectionCard className="bg-white/80">
+          <p className="text-sm text-slate-500">Top category volume</p>
+          <p className="mt-2 text-lg font-semibold tracking-tight text-ink">
+            {Object.entries(stats.trendByCategory || {}).sort((a, b) => b[1] - a[1])[0]?.[0] ||
+              "N/A"}
+          </p>
+        </SectionCard>
+      </div>
 
       <SectionCard>
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

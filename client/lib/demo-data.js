@@ -6,6 +6,8 @@ export const demoIssues = [
     category: "garbage",
     status: "pending",
     assignedDepartment: "Sanitation",
+    priorityLevel: "medium",
+    priorityScore: 36,
     createdAt: "2026-03-14T09:30:00.000Z",
     updatedAt: "2026-03-14T09:30:00.000Z",
     imageUrl:
@@ -28,6 +30,8 @@ export const demoIssues = [
     category: "road",
     status: "in-progress",
     assignedDepartment: "Road Works",
+    priorityLevel: "high",
+    priorityScore: 58,
     createdAt: "2026-03-07T07:10:00.000Z",
     updatedAt: "2026-03-18T11:00:00.000Z",
     imageUrl:
@@ -50,6 +54,8 @@ export const demoIssues = [
     category: "streetlight",
     status: "resolved",
     assignedDepartment: "Electricity Board",
+    priorityLevel: "high",
+    priorityScore: 54,
     createdAt: "2026-02-28T18:25:00.000Z",
     updatedAt: "2026-03-05T13:40:00.000Z",
     imageUrl:
@@ -98,5 +104,18 @@ export const demoStats = {
   inProgressIssues: 41,
   resolvedIssues: 51,
   stalePendingIssues: 9,
+  averageFirstResponseHours: 5.4,
+  averageResolutionHours: 31.2,
+  priorityCounts: {
+    low: 12,
+    medium: 58,
+    high: 41,
+    critical: 17,
+  },
+  trendByCategory: {
+    garbage: 29,
+    road: 24,
+    streetlight: 18,
+    water: 16,
+  },
 };
-

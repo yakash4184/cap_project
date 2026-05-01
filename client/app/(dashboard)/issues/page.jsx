@@ -26,6 +26,11 @@ function buildStats(issues) {
 }
 
 const filterOptions = ["all", "pending", "in-progress", "resolved"];
+const LIVE_SYNC_INTERVAL_MS = 15000;
+
+function isLocalRealtimeTarget(url) {
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(url);
+}
 
 export default function CitizenIssuesPage() {
   const [session, setSession] = useState(null);
@@ -48,7 +53,9 @@ export default function CitizenIssuesPage() {
       return;
     }
 
-    const loadLiveData = async () => {
+    let pollTimer;
+
+    const loadLiveData = async ({ silent = false } = {}) => {
       try {
         const [issueData, notificationData] = await Promise.all([
           issueApi.getAll({ token: storedSession.token }),
@@ -59,40 +66,55 @@ export default function CitizenIssuesPage() {
         setNotifications(notificationData);
         setNotice("");
       } catch (error) {
-        setNotice(error.message || "Live API unavailable, showing demo data.");
+        if (!silent) {
+          setNotice(error.message || "Live API unavailable, showing demo data.");
+        }
       }
     };
 
     loadLiveData();
 
+    pollTimer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        loadLiveData({ silent: true });
+      }
+    }, LIVE_SYNC_INTERVAL_MS);
+
     const socketRoot = apiBaseUrl.replace(/\/api$/, "");
-    const socket = io(socketRoot, {
-      autoConnect: true,
-      transports: ["websocket"],
-    });
+    let socket;
 
-    socket.on("connect", () => {
-      socket.emit("join:user", storedSession.user?.id);
-    });
-
-    socket.on("issue:updated", (updatedIssue) => {
-      setIssues((currentIssues) => {
-        const existing = currentIssues.find((issue) => issue._id === updatedIssue._id);
-        if (!existing) {
-          return [updatedIssue, ...currentIssues];
-        }
-        return currentIssues.map((issue) =>
-          issue._id === updatedIssue._id ? updatedIssue : issue
-        );
+    if (isLocalRealtimeTarget(socketRoot)) {
+      socket = io(socketRoot, {
+        autoConnect: true,
+        transports: ["websocket"],
       });
-    });
 
-    socket.on("notification:new", (notification) => {
-      setNotifications((currentNotifications) => [notification, ...currentNotifications]);
-    });
+      socket.on("connect", () => {
+        socket.emit("join:user", storedSession.user?.id);
+      });
+
+      socket.on("issue:updated", (updatedIssue) => {
+        setIssues((currentIssues) => {
+          const existing = currentIssues.find((issue) => issue._id === updatedIssue._id);
+          if (!existing) {
+            return [updatedIssue, ...currentIssues];
+          }
+          return currentIssues.map((issue) =>
+            issue._id === updatedIssue._id ? updatedIssue : issue
+          );
+        });
+      });
+
+      socket.on("notification:new", (notification) => {
+        setNotifications((currentNotifications) => [notification, ...currentNotifications]);
+      });
+    }
 
     return () => {
-      socket.close();
+      if (pollTimer) {
+        window.clearInterval(pollTimer);
+      }
+      socket?.close();
     };
   }, []);
 

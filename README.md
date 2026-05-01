@@ -239,10 +239,31 @@ npm install --prefix=..
 MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_secret
 JWT_EXPIRES_IN=7d
+ADMIN_REGISTRATION_SECRET=your_admin_bootstrap_secret
+CRON_SECRET=your_vercel_cron_secret
 CLIENT_URL=https://your-frontend-domain.vercel.app
 AUTO_RESOLVE_OLD_ISSUES=false
 AUTO_RESOLVE_DAYS=15
 ```
+
+### Production Activation Checklist
+
+To fully activate the Phase 1 production hardening changes on Vercel:
+
+1. Add `ADMIN_REGISTRATION_SECRET` to the backend Vercel project.
+2. Add `CRON_SECRET` to the backend Vercel project.
+3. Keep `AUTO_RESOLVE_OLD_ISSUES=true` if you want stale issue auto-resolution enabled.
+4. Redeploy the backend project after saving those variables.
+5. Confirm cron setup in Vercel by checking:
+   `Settings -> Cron Jobs`
+6. Test secure admin creation using:
+   `POST /api/auth/register-admin`
+7. Test the scheduler manually with the production backend URL:
+   `GET /api/cron/auto-resolve`
+   using header:
+   `Authorization: Bearer <CRON_SECRET>`
+
+When these steps are completed and the backend is redeployed, admin security and the production-safe auto-resolve scheduler will be active in production.
 
 ### Current Deployed URLs
 

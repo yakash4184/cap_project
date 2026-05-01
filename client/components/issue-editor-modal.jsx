@@ -129,6 +129,15 @@ export function IssueEditorModal({
           </label>
 
           <label>
+            <span className="mb-2 block text-sm font-medium text-slate-600">Priority</span>
+            <input
+              value={issue.priorityLevel || "medium"}
+              disabled
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 capitalize text-slate-600"
+            />
+          </label>
+
+          <label>
             <span className="mb-2 block text-sm font-medium text-slate-600">Latitude</span>
             <input
               value={formState.lat}
@@ -219,4 +228,3 @@ export function IssueEditorModal({
     </div>
   );
 }
-

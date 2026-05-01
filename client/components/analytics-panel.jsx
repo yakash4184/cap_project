@@ -5,8 +5,19 @@ export function AnalyticsPanel({ issues }) {
     accumulator[issue.category] = (accumulator[issue.category] || 0) + 1;
     return accumulator;
   }, {});
+  const departmentCounts = issues.reduce((accumulator, issue) => {
+    const department = issue.assignedDepartment || "Unassigned";
+    accumulator[department] = (accumulator[department] || 0) + 1;
+    return accumulator;
+  }, {});
+  const priorityCounts = issues.reduce((accumulator, issue) => {
+    const priority = issue.priorityLevel || "medium";
+    accumulator[priority] = (accumulator[priority] || 0) + 1;
+    return accumulator;
+  }, {});
 
   const maxCount = Math.max(...Object.values(categoryCounts), 1);
+  const maxDepartmentCount = Math.max(...Object.values(departmentCounts), 1);
 
   return (
     <SectionCard>
@@ -35,7 +46,45 @@ export function AnalyticsPanel({ issues }) {
           </div>
         ))}
       </div>
+
+      <div className="mt-8">
+        <h4 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+          Department workload
+        </h4>
+        <div className="mt-4 space-y-4">
+          {Object.entries(departmentCounts).map(([department, count]) => (
+            <div key={department}>
+              <div className="mb-2 flex items-center justify-between text-sm">
+                <span className="font-medium text-slate-700">{department}</span>
+                <span className="text-slate-500">{count} issues</span>
+              </div>
+              <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-ink to-lagoon"
+                  style={{ width: `${(count / maxDepartmentCount) * 100}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-8">
+        <h4 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+          Priority mix
+        </h4>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {Object.entries(priorityCounts).map(([priority, count]) => (
+            <div
+              key={priority}
+              className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm"
+            >
+              <p className="font-semibold capitalize text-ink">{priority}</p>
+              <p className="mt-1 text-slate-500">{count} issues</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </SectionCard>
   );
 }
-

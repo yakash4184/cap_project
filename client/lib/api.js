@@ -20,9 +20,7 @@ async function safeFetch(url, options) {
   try {
     return await fetch(url, options);
   } catch (error) {
-    throw new Error(
-      "Backend server unreachable. Start the Express server on http://localhost:5000."
-    );
+    throw new Error(`Backend server unreachable at ${API_BASE_URL}.`);
   }
 }
 
