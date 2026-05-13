@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Building2,
@@ -11,14 +12,31 @@ import {
   UserRoundSearch,
 } from "lucide-react";
 
-import { clearSession, getStoredSession } from "@/lib/auth";
+import { AUTH_STORAGE_EVENT, clearSession, getStoredSession } from "@/lib/auth";
 
 export function SiteHeader() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [session, setSession] = useState(null);
 
   useEffect(() => {
-    setSession(getStoredSession());
-  }, []);
+    const syncSession = () => {
+      setSession(getStoredSession());
+    };
+
+    syncSession();
+
+    window.addEventListener(AUTH_STORAGE_EVENT, syncSession);
+    window.addEventListener("storage", syncSession);
+
+    return () => {
+      window.removeEventListener(AUTH_STORAGE_EVENT, syncSession);
+      window.removeEventListener("storage", syncSession);
+    };
+  }, [pathname]);
+
+  const adminHref =
+    session?.user?.role === "admin" ? "/admin" : "/login?next=/admin&role=admin";
 
   return (
     <header className="sticky top-0 z-30 border-b border-blue-100/80 bg-white/90 backdrop-blur-xl">
@@ -48,7 +66,7 @@ export function SiteHeader() {
             Citizen Desk
           </Link>
           <Link
-            href="/admin"
+            href={adminHref}
             className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-slate-700 transition hover:bg-blue-50 hover:text-lagoon"
           >
             <LayoutDashboard className="h-4 w-4" />
@@ -69,30 +87,24 @@ export function SiteHeader() {
               </div>
               <button
                 type="button"
-                className="rounded-full border border-blue-100 bg-white p-3 text-slate-700 transition hover:bg-blue-50"
+                className="inline-flex items-center gap-2 rounded-full bg-lagoon px-4 py-2 text-sm font-semibold text-white shadow-glow transition hover:bg-blue-700"
                 onClick={() => {
                   clearSession();
                   setSession(null);
+                  router.push("/login");
                 }}
               >
                 <LogOut className="h-4 w-4" />
+                Logout
               </button>
             </>
           ) : (
-            <div className="flex gap-2">
-              <Link
-                href="/login"
-                className="rounded-full border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-blue-50"
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="rounded-full bg-lagoon px-4 py-2 text-sm font-semibold text-white shadow-glow transition hover:bg-blue-700"
-              >
-                Get Started
-              </Link>
-            </div>
+            <Link
+              href="/login"
+              className="rounded-full border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-blue-50"
+            >
+              Login
+            </Link>
           )}
         </div>
 
@@ -111,7 +123,7 @@ export function SiteHeader() {
             Issues
           </Link>
           <Link
-            href="/admin"
+            href={adminHref}
             className="inline-flex items-center gap-1 rounded-xl px-3 py-2 transition hover:bg-white hover:text-lagoon"
           >
             <LayoutDashboard className="h-3.5 w-3.5" />

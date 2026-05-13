@@ -1,7 +1,6 @@
 import streamifier from "streamifier";
 
 import { cloudinary, isCloudinaryConfigured } from "../config/cloudinary.js";
-import { ApiError } from "../utils/ApiError.js";
 
 export const uploadIssueImage = async (file, { fallbackUrl = "" } = {}) => {
   if (!file) {
@@ -9,14 +8,13 @@ export const uploadIssueImage = async (file, { fallbackUrl = "" } = {}) => {
   }
 
   if (!isCloudinaryConfigured) {
-    if (fallbackUrl) {
-      return fallbackUrl;
+    if (file.buffer?.length) {
+      const mimeType = file.mimetype || "image/jpeg";
+      const encodedFile = file.buffer.toString("base64");
+      return `data:${mimeType};base64,${encodedFile}`;
     }
 
-    throw new ApiError(
-      400,
-      "Image file uploads are unavailable because Cloudinary is not configured. Please provide an image URL or configure Cloudinary."
-    );
+    return fallbackUrl;
   }
 
   return new Promise((resolve, reject) => {

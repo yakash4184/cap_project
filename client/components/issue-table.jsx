@@ -2,11 +2,12 @@
 
 import { StatusBadge } from "@/components/status-badge";
 import { SectionCard } from "@/components/section-card";
-import { formatDate } from "@/lib/formatters";
+import { formatDate, formatDateTime } from "@/lib/formatters";
 
 export function IssueTable({
   issues,
   showSelection = false,
+  showReporterDetails = false,
   selectedIds = [],
   onToggleSelect,
   onToggleAll,
@@ -68,6 +69,16 @@ export function IssueTable({
                 </span>
               </div>
 
+              {showReporterDetails ? (
+                <div className="rounded-xl border border-blue-100 bg-blue-50/40 px-3 py-2 text-xs text-slate-600">
+                  <p className="font-semibold text-slate-700">
+                    {issue.reportedBy?.name || "Unknown citizen"}
+                  </p>
+                  <p>{issue.reportedBy?.phoneNumber || "-"}</p>
+                  <p className="truncate">{issue.reportedBy?.email || "-"}</p>
+                </div>
+              ) : null}
+
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <StatusBadge status={issue.status} />
                 {hasActions ? <div>{renderActions(issue)}</div> : null}
@@ -92,10 +103,12 @@ export function IssueTable({
                 </th>
               ) : null}
               <th className="px-5 py-4">Issue</th>
+              {showReporterDetails ? <th className="px-5 py-4">Citizen</th> : null}
+              {showReporterDetails ? <th className="px-5 py-4">Contact</th> : null}
               <th className="px-5 py-4">Category</th>
               <th className="px-5 py-4">Status</th>
               <th className="px-5 py-4">Department</th>
-              <th className="px-5 py-4">Reported</th>
+              <th className="px-5 py-4">Submitted</th>
               {hasActions ? <th className="px-5 py-4">Actions</th> : null}
             </tr>
           </thead>
@@ -103,7 +116,12 @@ export function IssueTable({
             {issues.length === 0 ? (
               <tr>
                 <td
-                  colSpan={(showSelection ? 1 : 0) + 5 + (hasActions ? 1 : 0)}
+                  colSpan={
+                    (showSelection ? 1 : 0) +
+                    5 +
+                    (showReporterDetails ? 2 : 0) +
+                    (hasActions ? 1 : 0)
+                  }
                   className="px-5 py-16 text-center text-sm text-slate-500"
                 >
                   {emptyMessage}
@@ -132,13 +150,28 @@ export function IssueTable({
                     {issue.description}
                   </p>
                 </td>
+                {showReporterDetails ? (
+                  <td className="px-5 py-4">
+                    <p className="font-semibold text-ink">
+                      {issue.reportedBy?.name || "Unknown citizen"}
+                    </p>
+                  </td>
+                ) : null}
+                {showReporterDetails ? (
+                  <td className="px-5 py-4">
+                    <p className="text-xs text-slate-600">
+                      {issue.reportedBy?.phoneNumber || "-"}
+                    </p>
+                    <p className="text-xs text-slate-500">{issue.reportedBy?.email || "-"}</p>
+                  </td>
+                ) : null}
                 <td className="px-5 py-4 capitalize">{issue.category}</td>
                 <td className="px-5 py-4">
                   <StatusBadge status={issue.status} />
                 </td>
                 <td className="px-5 py-4">{issue.assignedDepartment}</td>
                 <td className="px-5 py-4 text-xs uppercase tracking-[0.22em] text-slate-400">
-                  {formatDate(issue.createdAt)}
+                  {formatDateTime(issue.createdAt)}
                 </td>
                 {hasActions ? (
                   <td className="px-5 py-4">{renderActions(issue)}</td>

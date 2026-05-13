@@ -40,47 +40,20 @@ function withPatchedMethods(patches, run) {
     .finally(() => restorers.reverse().forEach((restore) => restore()));
 }
 
-test("registerUser always creates citizen accounts", async () => {
-  process.env.JWT_SECRET = "test-secret";
-
-  const createdUsers = [];
+test("registerUser rejects password-based citizen signup", async () => {
   const req = {
     body: {
-      name: "Citizen One",
-      email: "citizen@example.com",
-      password: "secret123",
       role: "user",
     },
   };
   const res = createMockRes();
 
-  await withPatchedMethods(
-    [
-      {
-        target: User,
-        key: "findOne",
-        value: async () => null,
-      },
-      {
-        target: User,
-        key: "create",
-        value: async (payload) => {
-          createdUsers.push(payload);
-          return {
-            _id: "user-1",
-            ...payload,
-          };
-        },
-      },
-    ],
-    () => registerUser(req, res, (error) => {
-      throw error;
-    })
-  );
+  await registerUser(req, res, (error) => {
+    throw error;
+  });
 
-  assert.equal(res.statusCode, 201);
-  assert.equal(createdUsers[0].role, "user");
-  assert.equal(res.body.user.role, "user");
+  assert.equal(res.statusCode, 410);
+  assert.match(res.body.message, /Email OTP login/);
 });
 
 test("registerAdmin requires secure secret and creates admin", async () => {
@@ -92,6 +65,7 @@ test("registerAdmin requires secure secret and creates admin", async () => {
       name: "Admin One",
       email: "admin@example.com",
       password: "secret123",
+      department: "Electricity Board",
       adminRegistrationSecret: "admin-secret",
     },
     headers: {},
@@ -121,6 +95,29 @@ test("registerAdmin requires secure secret and creates admin", async () => {
 
   assert.equal(res.statusCode, 201);
   assert.equal(res.body.user.role, "admin");
+  assert.equal(res.body.user.department, "Electricity Board");
+});
+
+test("registerAdmin rejects missing department", async () => {
+  process.env.ADMIN_REGISTRATION_SECRET = "admin-secret";
+
+  const req = {
+    body: {
+      name: "Admin Missing Department",
+      email: "missing-dept-admin@example.com",
+      password: "secret123",
+      adminRegistrationSecret: "admin-secret",
+    },
+    headers: {},
+  };
+  const res = createMockRes();
+
+  await registerAdmin(req, res, (error) => {
+    throw error;
+  });
+
+  assert.equal(res.statusCode, 400);
+  assert.match(res.body.message, /department/i);
 });
 
 test("createIssue auto-routes department and assigns priority", async () => {
@@ -181,7 +178,7 @@ test("updateIssue rejects invalid status values", async () => {
   const req = {
     params: { id: "507f1f77bcf86cd799439011" },
     body: { status: "done" },
-    user: { _id: "user-1", role: "admin" },
+    user: { _id: "user-1", role: "admin", department: "Urban Services" },
   };
   const res = createMockRes();
   let nextError = null;
@@ -194,6 +191,7 @@ test("updateIssue rejects invalid status values", async () => {
         value: async () => ({
           reportedBy: "user-1",
           status: "pending",
+          assignedDepartment: "Urban Services",
         }),
       },
     ],
@@ -214,6 +212,10 @@ test("bulkUpdateIssues validates department and status", async () => {
       status: "closed",
       assignedDepartment: "Unknown Team",
     },
+    user: {
+      role: "admin",
+      department: "Urban Services",
+    },
   };
   const res = createMockRes();
   let nextError = null;
@@ -227,7 +229,12 @@ test("bulkUpdateIssues validates department and status", async () => {
 });
 
 test("getAdminStats returns advanced analytics fields", async () => {
-  const req = {};
+  const req = {
+    user: {
+      role: "admin",
+      department: "Urban Services",
+    },
+  };
   const res = createMockRes();
 
   await withPatchedMethods(
@@ -241,6 +248,7 @@ test("getAdminStats returns advanced analytics fields", async () => {
           if (query.status === "pending") return 2;
           if (query.status === "in-progress") return 1;
           if (query.status === "resolved") return 1;
+          if (query.status === "rejected") return 0;
           return 0;
         },
       },
@@ -291,6 +299,7 @@ test("getAdminStats returns advanced analytics fields", async () => {
   assert.ok("averageFirstResponseHours" in res.body);
   assert.ok("averageResolutionHours" in res.body);
   assert.ok("departmentPerformance" in res.body);
+  assert.ok("rejectedIssues" in res.body);
 });
 
 test("getNotifications returns latest notifications for current user", async () => {

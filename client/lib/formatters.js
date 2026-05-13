@@ -6,6 +6,16 @@ export function formatDate(dateValue) {
   }).format(new Date(dateValue));
 }
 
+export function formatDateTime(dateValue) {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(dateValue));
+}
+
 export function timeAgo(dateValue) {
   const seconds = Math.floor((Date.now() - new Date(dateValue).getTime()) / 1000);
 
@@ -30,4 +40,3 @@ export function timeAgo(dateValue) {
 
   return "just now";
 }
-

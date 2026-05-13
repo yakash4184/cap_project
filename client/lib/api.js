@@ -43,6 +43,47 @@ export const authApi = {
         body: JSON.stringify(payload),
       })
     ),
+  registerAdmin: async (payload) =>
+    handleResponse(
+      await safeFetch(`${API_BASE_URL}/auth/register-admin`, {
+        method: "POST",
+        headers: getJsonHeaders(),
+        body: JSON.stringify(payload),
+      })
+    ),
+  requestOtp: async (payload) =>
+    handleResponse(
+      await safeFetch(`${API_BASE_URL}/auth/request-otp`, {
+        method: "POST",
+        headers: getJsonHeaders(),
+        body: JSON.stringify(payload),
+      })
+    ),
+  verifyOtp: async (payload) =>
+    handleResponse(
+      await safeFetch(`${API_BASE_URL}/auth/verify-otp`, {
+        method: "POST",
+        headers: getJsonHeaders(),
+        body: JSON.stringify(payload),
+      })
+    ),
+  getMe: async (token) =>
+    handleResponse(
+      await safeFetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      })
+    ),
+  updateCitizenProfile: async ({ token, payload }) =>
+    handleResponse(
+      await safeFetch(`${API_BASE_URL}/auth/citizen-profile`, {
+        method: "PUT",
+        headers: getJsonHeaders(token),
+        body: JSON.stringify(payload),
+      })
+    ),
 };
 
 export const issueApi = {

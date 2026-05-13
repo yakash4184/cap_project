@@ -9,7 +9,7 @@ export const issueCategories = [
   "other",
 ];
 
-export const issueStatuses = ["pending", "in-progress", "resolved"];
+export const issueStatuses = ["pending", "in-progress", "resolved", "rejected"];
 export const priorityLevels = ["low", "medium", "high", "critical"];
 
 export const departments = [
@@ -32,4 +32,5 @@ export const statusColors = {
   pending: "bg-blue-100 text-blue-800",
   "in-progress": "bg-indigo-100 text-indigo-800",
   resolved: "bg-emerald-100 text-emerald-800",
+  rejected: "bg-rose-100 text-rose-800",
 };

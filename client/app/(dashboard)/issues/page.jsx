@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { ArrowRight, CheckCircle2, Clock3, RefreshCcw, TriangleAlert } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { CheckCircle2, Clock3, RefreshCcw, TriangleAlert, XCircle } from "lucide-react";
 import { io } from "socket.io-client";
 
+import { CitizenProfileForm } from "@/components/citizen-profile-form";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { IssueEditorModal } from "@/components/issue-editor-modal";
 import { IssueReportForm } from "@/components/issue-report-form";
@@ -12,9 +13,17 @@ import { IssueTable } from "@/components/issue-table";
 import { MapPanel } from "@/components/map-panel";
 import { NotificationPanel } from "@/components/notification-panel";
 import { SectionCard } from "@/components/section-card";
-import { apiBaseUrl, issueApi, notificationApi } from "@/lib/api";
-import { demoIssues, demoNotifications } from "@/lib/demo-data";
-import { getStoredSession } from "@/lib/auth";
+import { apiBaseUrl, authApi, issueApi, notificationApi } from "@/lib/api";
+import { clearSession, getStoredSession, storeSession } from "@/lib/auth";
+
+const LIVE_SYNC_INTERVAL_MS = 15000;
+const filterOptions = ["all", "pending", "in-progress", "resolved", "rejected"];
+const AUTH_ERROR_PATTERNS = [
+  "Unauthorized",
+  "Forbidden",
+  "Invalid or expired token",
+  "User not found",
+];
 
 function buildStats(issues) {
   return {
@@ -22,57 +31,161 @@ function buildStats(issues) {
     pending: issues.filter((issue) => issue.status === "pending").length,
     inProgress: issues.filter((issue) => issue.status === "in-progress").length,
     resolved: issues.filter((issue) => issue.status === "resolved").length,
+    rejected: issues.filter((issue) => issue.status === "rejected").length,
   };
 }
 
-const filterOptions = ["all", "pending", "in-progress", "resolved"];
-const LIVE_SYNC_INTERVAL_MS = 15000;
-
-function isLocalRealtimeTarget(url) {
-  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(url);
-}
-
 export default function CitizenIssuesPage() {
+  const router = useRouter();
   const [session, setSession] = useState(null);
-  const [issues, setIssues] = useState(demoIssues);
-  const [notifications, setNotifications] = useState(demoNotifications);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [issues, setIssues] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState("all");
-  const [notice, setNotice] = useState(
-    "Demo data loaded. Log in with backend configured to use live API data."
-  );
+  const [notice, setNotice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeIssue, setActiveIssue] = useState(null);
   const [isSavingIssue, setIsSavingIssue] = useState(false);
   const [isDeletingIssue, setIsDeletingIssue] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  const isAuthError = (message = "") =>
+    AUTH_ERROR_PATTERNS.some((pattern) => message.includes(pattern));
+
+  const redirectToCitizenLogin = useCallback(() => {
+    clearSession();
+    setSession(null);
+    setIsAuthorized(false);
+    setAuthChecked(true);
+    router.replace("/login?next=/issues");
+  }, [router]);
+
+  const persistSessionUser = (updatedUser) => {
+    setSession((currentSession) => {
+      if (!currentSession?.token) {
+        return currentSession;
+      }
+
+      const currentUser = currentSession.user || {};
+      const isUnchanged =
+        currentUser.id === updatedUser?.id &&
+        currentUser.name === updatedUser?.name &&
+        currentUser.email === updatedUser?.email &&
+        currentUser.role === updatedUser?.role &&
+        currentUser.phoneNumber === updatedUser?.phoneNumber &&
+        currentUser.address === updatedUser?.address &&
+        currentUser.city === updatedUser?.city &&
+        currentUser.state === updatedUser?.state &&
+        currentUser.postalCode === updatedUser?.postalCode &&
+        currentUser.profileCompleted === updatedUser?.profileCompleted;
+
+      if (isUnchanged) {
+        return currentSession;
+      }
+
+      return {
+        ...currentSession,
+        user: updatedUser,
+      };
+    });
+  };
+
+  useEffect(() => {
+    if (!session?.token) {
+      return;
+    }
+
+    storeSession(session);
+  }, [session]);
 
   useEffect(() => {
     const storedSession = getStoredSession();
-    setSession(storedSession);
 
-    if (!storedSession?.token) {
+    if (!storedSession?.token || storedSession?.user?.role !== "user") {
+      redirectToCitizenLogin();
+      return;
+    }
+
+    setSession(storedSession);
+    setIsAuthorized(true);
+    setAuthChecked(true);
+  }, [redirectToCitizenLogin]);
+
+  useEffect(() => {
+    if (!isAuthorized || !session?.token) {
       return;
     }
 
     let pollTimer;
+    const socketRoot = apiBaseUrl.replace(/\/api$/, "");
+    const socket = io(socketRoot, {
+      autoConnect: true,
+      transports: ["websocket", "polling"],
+    });
 
     const loadLiveData = async ({ silent = false } = {}) => {
       try {
-        const [issueData, notificationData] = await Promise.all([
-          issueApi.getAll({ token: storedSession.token }),
-          notificationApi.getAll(storedSession.token),
+        const [meData, issueData, notificationData] = await Promise.all([
+          authApi.getMe(session.token),
+          issueApi.getAll({ token: session.token }),
+          notificationApi.getAll(session.token),
         ]);
 
+        persistSessionUser(meData.user);
         setIssues(issueData);
         setNotifications(notificationData);
-        setNotice("");
-      } catch (error) {
+
         if (!silent) {
-          setNotice(error.message || "Live API unavailable, showing demo data.");
+          setNotice(
+            meData.user.profileCompleted
+              ? ""
+              : "Complete your citizen profile before complaint submission."
+          );
+        }
+      } catch (error) {
+        if (isAuthError(error.message || "")) {
+          redirectToCitizenLogin();
+          return;
+        }
+
+        if (!silent) {
+          setNotice(error.message || "Unable to load citizen dashboard data.");
         }
       }
     };
 
     loadLiveData();
+
+    socket.on("connect", () => {
+      socket.emit("join:user", session.user?.id);
+    });
+
+    socket.on("issue:updated", (updatedIssue) => {
+      const reporterId =
+        updatedIssue?.reportedBy?._id ||
+        updatedIssue?.reportedBy?.id ||
+        updatedIssue?.reportedBy;
+
+      if (reporterId && reporterId !== session.user?.id) {
+        return;
+      }
+
+      setIssues((currentIssues) => {
+        const existing = currentIssues.find((issue) => issue._id === updatedIssue._id);
+        if (!existing) {
+          return [updatedIssue, ...currentIssues];
+        }
+
+        return currentIssues.map((issue) =>
+          issue._id === updatedIssue._id ? updatedIssue : issue
+        );
+      });
+    });
+
+    socket.on("notification:new", (notification) => {
+      setNotifications((currentNotifications) => [notification, ...currentNotifications]);
+    });
 
     pollTimer = window.setInterval(() => {
       if (document.visibilityState === "visible") {
@@ -80,47 +193,49 @@ export default function CitizenIssuesPage() {
       }
     }, LIVE_SYNC_INTERVAL_MS);
 
-    const socketRoot = apiBaseUrl.replace(/\/api$/, "");
-    let socket;
-
-    if (isLocalRealtimeTarget(socketRoot)) {
-      socket = io(socketRoot, {
-        autoConnect: true,
-        transports: ["websocket"],
-      });
-
-      socket.on("connect", () => {
-        socket.emit("join:user", storedSession.user?.id);
-      });
-
-      socket.on("issue:updated", (updatedIssue) => {
-        setIssues((currentIssues) => {
-          const existing = currentIssues.find((issue) => issue._id === updatedIssue._id);
-          if (!existing) {
-            return [updatedIssue, ...currentIssues];
-          }
-          return currentIssues.map((issue) =>
-            issue._id === updatedIssue._id ? updatedIssue : issue
-          );
-        });
-      });
-
-      socket.on("notification:new", (notification) => {
-        setNotifications((currentNotifications) => [notification, ...currentNotifications]);
-      });
-    }
-
     return () => {
       if (pollTimer) {
         window.clearInterval(pollTimer);
       }
-      socket?.close();
+      socket.close();
     };
-  }, []);
+  }, [isAuthorized, session?.token]);
+
+  const handleSaveProfile = async (profilePayload) => {
+    if (!session?.token) {
+      redirectToCitizenLogin();
+      return;
+    }
+
+    setIsSavingProfile(true);
+
+    try {
+      const response = await authApi.updateCitizenProfile({
+        token: session.token,
+        payload: profilePayload,
+      });
+
+      persistSessionUser(response.user);
+      setNotice("Citizen profile saved successfully.");
+    } catch (error) {
+      if (isAuthError(error.message || "")) {
+        redirectToCitizenLogin();
+        return;
+      }
+      setNotice(error.message);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const handleCreateIssue = async (formData) => {
     if (!session?.token) {
-      setNotice("Login required for live issue submission. Configure backend or use demo view.");
+      redirectToCitizenLogin();
+      return false;
+    }
+
+    if (!session.user?.profileCompleted) {
+      setNotice("Complete citizen profile before submitting complaint.");
       return false;
     }
 
@@ -133,9 +248,13 @@ export default function CitizenIssuesPage() {
       });
 
       setIssues((currentIssues) => [createdIssue, ...currentIssues]);
-      setNotice("Issue submitted successfully.");
+      setNotice("Complaint submitted successfully.");
       return true;
     } catch (error) {
+      if (isAuthError(error.message || "")) {
+        redirectToCitizenLogin();
+        return false;
+      }
       setNotice(error.message);
       return false;
     } finally {
@@ -145,7 +264,7 @@ export default function CitizenIssuesPage() {
 
   const handleUpdateIssue = async (issue, payload) => {
     if (!session?.token) {
-      setNotice("Login required for live update.");
+      redirectToCitizenLogin();
       return;
     }
 
@@ -166,6 +285,10 @@ export default function CitizenIssuesPage() {
       setActiveIssue(updatedIssue);
       setNotice("Issue updated successfully.");
     } catch (error) {
+      if (isAuthError(error.message || "")) {
+        redirectToCitizenLogin();
+        return;
+      }
       setNotice(error.message);
     } finally {
       setIsSavingIssue(false);
@@ -174,7 +297,7 @@ export default function CitizenIssuesPage() {
 
   const handleDeleteIssue = async (issue) => {
     if (!session?.token) {
-      setNotice("Login required for delete.");
+      redirectToCitizenLogin();
       return;
     }
 
@@ -192,6 +315,10 @@ export default function CitizenIssuesPage() {
       setActiveIssue(null);
       setNotice("Issue deleted successfully.");
     } catch (error) {
+      if (isAuthError(error.message || "")) {
+        redirectToCitizenLogin();
+        return;
+      }
       setNotice(error.message);
     } finally {
       setIsDeletingIssue(false);
@@ -217,9 +344,25 @@ export default function CitizenIssuesPage() {
         )
       );
     } catch (error) {
+      if (isAuthError(error.message || "")) {
+        redirectToCitizenLogin();
+        return;
+      }
       setNotice(error.message);
     }
   };
+
+  if (!authChecked) {
+    return (
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-center px-4 py-16 text-sm font-semibold text-slate-600">
+        Verifying citizen authentication...
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return null;
+  }
 
   const visibleIssues =
     filter === "all" ? issues : issues.filter((issue) => issue.status === filter);
@@ -228,22 +371,12 @@ export default function CitizenIssuesPage() {
   return (
     <DashboardShell
       eyebrow="Citizen Desk"
-      title="Submit, monitor, and follow every civic issue."
-      description="Residents can report problems with live coordinates, supporting evidence, and clear status tracking. Notifications update the reporting citizen when municipal action changes."
+      title="Submit, monitor, and follow every civic complaint."
+      description="Secure OTP login keeps complaint reporting private. Every update appears live on the citizen and admin dashboards."
       actions={
-        session?.token ? (
-          <div className="rounded-full border border-white/70 bg-white/75 px-4 py-3 text-sm font-semibold text-slate-700">
-            Signed in as {session.user?.name}
-          </div>
-        ) : (
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 rounded-full bg-lagoon px-5 py-3 text-sm font-semibold text-white shadow-glow hover:bg-blue-700"
-          >
-            Login for live access
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        )
+        <div className="rounded-full border border-white/70 bg-white/75 px-4 py-3 text-sm font-semibold text-slate-700">
+          Citizen: {session?.user?.name}
+        </div>
       }
     >
       {notice ? (
@@ -252,12 +385,13 @@ export default function CitizenIssuesPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {[
           { label: "Total issues", value: stats.total, icon: RefreshCcw },
           { label: "Pending", value: stats.pending, icon: Clock3 },
           { label: "In progress", value: stats.inProgress, icon: TriangleAlert },
           { label: "Resolved", value: stats.resolved, icon: CheckCircle2 },
+          { label: "Rejected", value: stats.rejected, icon: XCircle },
         ].map((card) => {
           const Icon = card.icon;
           return (
@@ -278,10 +412,25 @@ export default function CitizenIssuesPage() {
         })}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <IssueReportForm onSubmit={handleCreateIssue} isSubmitting={isSubmitting} />
-        <NotificationPanel notifications={notifications} onMarkRead={handleMarkRead} />
-      </div>
+      <CitizenProfileForm
+        profile={session?.user}
+        email={session?.user?.email}
+        onSubmit={handleSaveProfile}
+        isSaving={isSavingProfile}
+      />
+
+      {session?.user?.profileCompleted ? (
+        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <IssueReportForm onSubmit={handleCreateIssue} isSubmitting={isSubmitting} />
+          <NotificationPanel notifications={notifications} onMarkRead={handleMarkRead} />
+        </div>
+      ) : (
+        <SectionCard>
+          <p className="text-sm font-medium text-slate-700">
+            Complaint form is locked until required profile details are completed.
+          </p>
+        </SectionCard>
+      )}
 
       <SectionCard>
         <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -290,7 +439,7 @@ export default function CitizenIssuesPage() {
               Tracking board
             </p>
             <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">
-              My reported issues
+              My reported complaints
             </h3>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -312,7 +461,7 @@ export default function CitizenIssuesPage() {
         </div>
         <IssueTable
           issues={visibleIssues}
-          emptyMessage="No matching citizen issues found."
+          emptyMessage="No matching citizen complaints found."
           renderActions={(issue) => (
             <button
               type="button"

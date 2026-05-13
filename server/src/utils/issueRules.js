@@ -11,7 +11,7 @@ export const issueCategories = [
   "other",
 ];
 
-export const issueStatuses = ["pending", "in-progress", "resolved"];
+export const issueStatuses = ["pending", "in-progress", "resolved", "rejected"];
 
 export const departments = [
   "Sanitation",
@@ -22,6 +22,10 @@ export const departments = [
   "Zonal Response Team",
   "Unassigned",
 ];
+
+export const assignableDepartments = departments.filter(
+  (department) => department !== "Unassigned"
+);
 
 export const validateIssueCategory = (category) => {
   if (!issueCategories.includes(category)) {
@@ -38,5 +42,11 @@ export const validateIssueStatus = (status) => {
 export const validateDepartment = (department) => {
   if (!departments.includes(department)) {
     throw new ApiError(400, `Invalid department: ${department}`);
+  }
+};
+
+export const validateAssignableDepartment = (department) => {
+  if (!assignableDepartments.includes(department)) {
+    throw new ApiError(400, `Invalid assignable department: ${department}`);
   }
 };

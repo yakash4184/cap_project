@@ -1,14 +1,18 @@
 import Link from "next/link";
 import {
+  ArrowDown,
   ArrowRight,
   BellRing,
   Building2,
   CheckCircle2,
+  FileText,
   Files,
   Handshake,
   Landmark,
+  LogIn,
   MapPinned,
   ShieldCheck,
+  UserPlus,
   Workflow,
 } from "lucide-react";
 
@@ -42,11 +46,29 @@ const featureCards = [
   },
 ];
 
-const workflowSteps = [
-  "Citizen reports issue with image, GPS coordinates, and description.",
-  "Municipal admin filters the queue and assigns the correct department.",
-  "Status changes trigger notifications and optional realtime socket updates.",
-  "Issues older than 15 days can be bulk-resolved or auto-resolved by cron.",
+const citizenGuideSteps = [
+  {
+    title: "Create account",
+    description: "Citizen Login पर जाएं, email OTP verify करें, और profile details भरें.",
+    icon: UserPlus,
+  },
+  {
+    title: "Login securely",
+    description: "OTP verify होने के बाद ही Citizen Desk और complaint form open होगा.",
+    icon: LogIn,
+  },
+  {
+    title: "Fill complaint form",
+    description:
+      "Title, description, category, department, address और GPS location भरें.",
+    icon: FileText,
+  },
+  {
+    title: "Submit and track",
+    description:
+      "Submit के बाद issue admin dashboard पर live दिखेगा और status updates मिलेंगे.",
+    icon: MapPinned,
+  },
 ];
 
 export default function HomePage() {
@@ -71,14 +93,14 @@ export default function HomePage() {
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link
-                  href="/register"
+                  href="/login?next=/issues"
                   className="inline-flex items-center gap-2 rounded-full bg-lagoon px-6 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-blue-700"
                 >
                   Launch Portal
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  href="/admin"
+                  href="/login?next=/admin&role=admin"
                   className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-lagoon hover:text-lagoon"
                 >
                   View Admin UI
@@ -147,25 +169,51 @@ export default function HomePage() {
             </div>
           </SectionCard>
 
-          <SectionCard className="bg-gradient-to-br from-[#123668] via-[#11488b] to-[#0f5fc6] text-white">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/75">
-              Workflow
+          <SectionCard className="bg-white/92">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lagoon">
+              Quick Guide
             </p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Four-step civic resolution cycle
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+              New user के लिए simple complaint flow
             </h2>
-            <div className="mt-6 space-y-3">
-              {workflowSteps.map((step, index) => (
-                <div
-                  key={step}
-                  className="flex gap-4 rounded-xl border border-white/15 bg-white/10 p-4"
-                >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/20 text-sm font-semibold">
-                    0{index + 1}
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              नीचे दिए गए steps follow करके कोई भी citizen आसानी से complaint register
+              कर सकता है.
+            </p>
+
+            <div className="mt-6">
+              {citizenGuideSteps.map((step, index) => {
+                const Icon = step.icon;
+                const isLast = index === citizenGuideSteps.length - 1;
+                return (
+                  <div key={step.title}>
+                    <div className="grid gap-3 rounded-xl border border-blue-100 bg-blue-50/45 p-4 sm:grid-cols-[auto_1fr] sm:items-start">
+                      <div className="flex items-center gap-2 sm:block">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-lagoon text-white">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-white px-2 text-xs font-semibold text-lagoon sm:mt-2">
+                          0{index + 1}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-base font-semibold text-ink">{step.title}</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">{step.description}</p>
+                      </div>
+                    </div>
+                    {!isLast ? (
+                      <div className="flex justify-center py-2 text-lagoon">
+                        <ArrowDown className="h-4 w-4" />
+                      </div>
+                    ) : null}
                   </div>
-                  <p className="text-sm leading-6 text-white/90">{step}</p>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+
+            <div className="mt-4 rounded-xl border border-blue-100 bg-white p-3 text-sm text-slate-600">
+              Tip: "Use GPS" button से actual location auto-fill होगी, जिससे admin को
+              exact complaint spot तुरंत समझ आता है.
             </div>
           </SectionCard>
         </div>

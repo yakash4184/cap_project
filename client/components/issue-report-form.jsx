@@ -6,6 +6,8 @@ import { Crosshair, ImagePlus, LoaderCircle } from "lucide-react";
 import { SectionCard } from "@/components/section-card";
 import { departments, issueCategories } from "@/lib/constants";
 
+const REQUIRED_MARK = <span className="ml-1 text-red-600">*</span>;
+
 const initialFormState = {
   title: "",
   description: "",
@@ -82,7 +84,10 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
 
       <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
         <label className="md:col-span-2">
-          <span className="mb-2 block text-sm font-medium text-slate-600">Title</span>
+          <span className="mb-2 block text-sm font-medium text-slate-600">
+            Complaint Title
+            {REQUIRED_MARK}
+          </span>
           <input
             required
             value={formState.title}
@@ -93,7 +98,10 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
         </label>
 
         <label className="md:col-span-2">
-          <span className="mb-2 block text-sm font-medium text-slate-600">Description</span>
+          <span className="mb-2 block text-sm font-medium text-slate-600">
+            Complaint Description
+            {REQUIRED_MARK}
+          </span>
           <textarea
             required
             rows={4}
@@ -105,8 +113,12 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
         </label>
 
         <label>
-          <span className="mb-2 block text-sm font-medium text-slate-600">Category</span>
+          <span className="mb-2 block text-sm font-medium text-slate-600">
+            Complaint Category
+            {REQUIRED_MARK}
+          </span>
           <select
+            required
             value={formState.category}
             onChange={(event) => updateField("category", event.target.value)}
             className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
@@ -120,8 +132,12 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
         </label>
 
         <label>
-          <span className="mb-2 block text-sm font-medium text-slate-600">Department</span>
+          <span className="mb-2 block text-sm font-medium text-slate-600">
+            Department
+            {REQUIRED_MARK}
+          </span>
           <select
+            required
             value={formState.assignedDepartment}
             onChange={(event) => updateField("assignedDepartment", event.target.value)}
             className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
@@ -145,7 +161,10 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
         </label>
 
         <label>
-          <span className="mb-2 block text-sm font-medium text-slate-600">Latitude</span>
+          <span className="mb-2 block text-sm font-medium text-slate-600">
+            Latitude
+            {REQUIRED_MARK}
+          </span>
           <input
             required
             value={formState.lat}
@@ -156,7 +175,10 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
         </label>
 
         <label>
-          <span className="mb-2 block text-sm font-medium text-slate-600">Longitude</span>
+          <span className="mb-2 block text-sm font-medium text-slate-600">
+            Longitude
+            {REQUIRED_MARK}
+          </span>
           <input
             required
             value={formState.lng}

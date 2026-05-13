@@ -1,7 +1,11 @@
 import { Issue } from "../models/Issue.js";
 import { createNotification } from "../services/notificationService.js";
 import { emitIssueUpdated } from "../services/socketService.js";
+import { sendComplaintResolvedEmail } from "../services/emailService.js";
 import { validateDepartment, validateIssueStatus } from "../utils/issueRules.js";
+
+const REPORTER_POPULATE_FIELDS =
+  "name email role phoneNumber address city state postalCode";
 
 const buildAdminQuery = ({ date, from, to, status, category, priorityLevel, department }) => {
   const query = {};
@@ -42,11 +46,15 @@ const buildAdminQuery = ({ date, from, to, status, category, priorityLevel, depa
   return query;
 };
 
+const getScopedDepartment = (user) => user?.department?.trim() || "Urban Services";
+
 export const filterIssues = async (req, res, next) => {
   try {
     const query = buildAdminQuery(req.query);
+    query.assignedDepartment = getScopedDepartment(req.user);
+
     const issues = await Issue.find(query)
-      .populate("reportedBy", "name email role")
+      .populate("reportedBy", REPORTER_POPULATE_FIELDS)
       .sort({ createdAt: -1 });
 
     res.json(issues);
@@ -58,26 +66,31 @@ export const filterIssues = async (req, res, next) => {
 export const getAdminStats = async (req, res, next) => {
   try {
     const staleThresholdDays = Number(process.env.AUTO_RESOLVE_DAYS || 15);
+    const adminDepartment = getScopedDepartment(req.user);
+    const scopedQuery = { assignedDepartment: adminDepartment };
     const [
       totalIssues,
       pendingIssues,
       inProgressIssues,
       resolvedIssues,
+      rejectedIssues,
       stalePendingIssues,
       issuesForAnalytics,
     ] =
       await Promise.all([
-        Issue.countDocuments(),
-        Issue.countDocuments({ status: "pending" }),
-        Issue.countDocuments({ status: "in-progress" }),
-        Issue.countDocuments({ status: "resolved" }),
+        Issue.countDocuments(scopedQuery),
+        Issue.countDocuments({ ...scopedQuery, status: "pending" }),
+        Issue.countDocuments({ ...scopedQuery, status: "in-progress" }),
+        Issue.countDocuments({ ...scopedQuery, status: "resolved" }),
+        Issue.countDocuments({ ...scopedQuery, status: "rejected" }),
         Issue.countDocuments({
+          ...scopedQuery,
           status: "pending",
           createdAt: {
             $lte: new Date(Date.now() - staleThresholdDays * 24 * 60 * 60 * 1000),
           },
         }),
-        Issue.find().select(
+        Issue.find(scopedQuery).select(
           "category status assignedDepartment priorityLevel createdAt updatedAt statusTimeline"
         ),
       ]);
@@ -131,6 +144,7 @@ export const getAdminStats = async (req, res, next) => {
       pendingIssues,
       inProgressIssues,
       resolvedIssues,
+      rejectedIssues,
       stalePendingIssues,
       priorityCounts,
       averageFirstResponseHours: responseHoursCount
@@ -150,6 +164,7 @@ export const getAdminStats = async (req, res, next) => {
 export const bulkUpdateIssues = async (req, res, next) => {
   try {
     const { issueIds, status, assignedDepartment, statusNote } = req.body;
+    const adminDepartment = getScopedDepartment(req.user);
 
     if (!Array.isArray(issueIds) || issueIds.length === 0) {
       return res.status(400).json({ message: "issueIds array is required" });
@@ -161,12 +176,25 @@ export const bulkUpdateIssues = async (req, res, next) => {
 
     if (assignedDepartment) {
       validateDepartment(assignedDepartment);
+
+      if (assignedDepartment !== adminDepartment) {
+        return res.status(403).json({
+          message: `You can only bulk-assign issues for your department (${adminDepartment}).`,
+        });
+      }
     }
 
-    const issues = await Issue.find({ _id: { $in: issueIds } }).populate(
-      "reportedBy",
-      "name email role"
-    );
+    const issues = await Issue.find({
+      _id: { $in: issueIds },
+      assignedDepartment: adminDepartment,
+    }).populate("reportedBy", REPORTER_POPULATE_FIELDS);
+
+    if (issues.length !== issueIds.length) {
+      return res.status(403).json({
+        message:
+          "One or more issues do not belong to your department. Bulk action was blocked.",
+      });
+    }
 
     for (const issue of issues) {
       const previousStatus = issue.status;
@@ -195,6 +223,20 @@ export const bulkUpdateIssues = async (req, res, next) => {
           issueId: issue._id,
           message: `Issue "${issue.title}" updated to ${status} by admin.`,
         });
+
+        if (status === "resolved" && issue.reportedBy?.email) {
+          try {
+            await sendComplaintResolvedEmail({
+              to: issue.reportedBy.email,
+              citizenName: issue.reportedBy.name,
+              complaintId: issue._id.toString(),
+              complaintTitle: issue.title,
+              resolvedAt: issue.updatedAt,
+            });
+          } catch (emailError) {
+            console.error("Bulk resolved email failed:", emailError.message);
+          }
+        }
       }
 
       emitIssueUpdated(issue);

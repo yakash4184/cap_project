@@ -1,4 +1,13 @@
 export const AUTH_STORAGE_KEY = "civic-issue-session";
+export const AUTH_STORAGE_EVENT = "civic-issue-auth-change";
+
+const emitAuthChange = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+};
 
 export const getStoredSession = () => {
   if (typeof window === "undefined") {
@@ -24,6 +33,7 @@ export const storeSession = (session) => {
   }
 
   window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+  emitAuthChange();
 };
 
 export const clearSession = () => {
@@ -32,5 +42,5 @@ export const clearSession = () => {
   }
 
   window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  emitAuthChange();
 };
-

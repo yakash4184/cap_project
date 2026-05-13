@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { MapPinned } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ExternalLink, MapPinned } from "lucide-react";
 
 import { SectionCard } from "@/components/section-card";
 
@@ -32,9 +32,33 @@ export function MapPanel({ issues }) {
   const mapRef = useRef(null);
   const [mapReady, setMapReady] = useState(false);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const mappableIssues = useMemo(
+    () =>
+      (issues || []).filter(
+        (issue) =>
+          typeof issue?.location?.lat === "number" &&
+          Number.isFinite(issue.location.lat) &&
+          typeof issue?.location?.lng === "number" &&
+          Number.isFinite(issue.location.lng)
+      ),
+    [issues]
+  );
+  const primaryIssue = mappableIssues[0] || null;
+
+  const buildFallbackEmbedUrl = (lat, lng) => {
+    const delta = 0.01;
+    const left = (lng - delta).toFixed(6);
+    const right = (lng + delta).toFixed(6);
+    const top = (lat + delta).toFixed(6);
+    const bottom = (lat - delta).toFixed(6);
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat}%2C${lng}`;
+  };
+
+  const buildExternalMapUrl = (lat, lng) =>
+    `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 
   useEffect(() => {
-    if (!apiKey || !issues?.length || !mapRef.current) {
+    if (!apiKey || !mappableIssues.length || !mapRef.current) {
       return undefined;
     }
 
@@ -46,7 +70,7 @@ export function MapPanel({ issues }) {
           return;
         }
 
-        const firstIssue = issues[0];
+        const firstIssue = mappableIssues[0];
         const map = new maps.Map(mapRef.current, {
           center: { lat: firstIssue.location.lat, lng: firstIssue.location.lng },
           zoom: 12,
@@ -60,7 +84,7 @@ export function MapPanel({ issues }) {
           ],
         });
 
-        issues.forEach((issue) => {
+        mappableIssues.forEach((issue) => {
           new maps.Marker({
             position: { lat: issue.location.lat, lng: issue.location.lng },
             map,
@@ -77,7 +101,7 @@ export function MapPanel({ issues }) {
     return () => {
       cancelled = true;
     };
-  }, [apiKey, issues]);
+  }, [apiKey, mappableIssues]);
 
   return (
     <SectionCard>
@@ -91,11 +115,11 @@ export function MapPanel({ issues }) {
           </h3>
         </div>
         <div className="rounded-full border border-blue-100 bg-blue-50/70 px-4 py-2 text-sm font-semibold text-slate-600">
-          {issues.length} markers
+          {mappableIssues.length} markers
         </div>
       </div>
 
-      {issues.length === 0 ? (
+      {mappableIssues.length === 0 ? (
         <div className="grid h-[240px] place-items-center rounded-2xl border border-dashed border-blue-200 bg-white/75 text-center sm:h-[300px]">
           <div className="max-w-sm px-6">
             <p className="text-xl font-semibold text-ink">No issues to map</p>
@@ -110,31 +134,61 @@ export function MapPanel({ issues }) {
           className="h-[240px] overflow-hidden rounded-2xl border border-blue-100 sm:h-[300px]"
         />
       ) : (
-        <div className="grid h-[240px] place-items-center rounded-2xl border border-dashed border-blue-200 bg-gradient-to-br from-white to-blue-50 text-center sm:h-[300px]">
-          <div className="max-w-md px-6">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-lagoon text-white">
-              <MapPinned className="h-6 w-6" />
+        <div className="overflow-hidden rounded-2xl border border-blue-100 bg-white/85">
+          <div className="grid gap-4 p-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+            <div className="overflow-hidden rounded-xl border border-blue-100 bg-blue-50/40">
+              <iframe
+                title="Citizen complaint GPS location"
+                src={buildFallbackEmbedUrl(primaryIssue.location.lat, primaryIssue.location.lng)}
+                className="h-[240px] w-full border-0 sm:h-[300px]"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
             </div>
-            <p className="text-xl font-semibold text-ink">Google Maps API key missing</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to render live markers. The issue
-              coordinates below still show precise reported locations for development.
-            </p>
+            <div className="space-y-3">
+              <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                <div className="mb-2 flex items-center gap-2 text-blue-900">
+                  <MapPinned className="h-4 w-4" />
+                  <p className="text-sm font-semibold">Live GPS Tracking Mode</p>
+                </div>
+                <p className="text-xs leading-5 text-slate-700">
+                  Showing exact complaint coordinates from citizen GPS submission.
+                </p>
+              </div>
+              <div className="space-y-3">
+                {mappableIssues.slice(0, 4).map((issue) => (
+                  <div
+                    key={issue._id}
+                    className="rounded-xl border border-blue-100 bg-white px-3 py-2"
+                  >
+                    <p className="text-sm font-semibold text-ink">{issue.title}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {issue.location?.address || "Address not provided"}
+                    </p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-400">
+                      {issue.location.lat.toFixed(6)}, {issue.location.lng.toFixed(6)}
+                    </p>
+                    <a
+                      href={buildExternalMapUrl(issue.location.lat, issue.location.lng)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-lagoon hover:text-blue-700"
+                    >
+                      Open location
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {!mapReady && !apiKey && issues.length > 0 ? (
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          {issues.slice(0, 4).map((issue) => (
-            <div key={issue._id} className="rounded-xl border border-blue-100 bg-white/90 p-4">
-              <p className="text-sm font-semibold text-ink">{issue.title}</p>
-              <p className="mt-1 text-sm text-slate-500">{issue.location.address}</p>
-              <p className="mt-2 text-xs uppercase tracking-[0.24em] text-slate-400">
-                {issue.location.lat.toFixed(4)}, {issue.location.lng.toFixed(4)}
-              </p>
-            </div>
-          ))}
+      {!mapReady && !apiKey && mappableIssues.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-dashed border-blue-200 bg-blue-50/50 px-4 py-3 text-xs text-slate-600">
+          For richer multi-marker map UI, add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in
+          `/client/.env.local`.
         </div>
       ) : null}
     </SectionCard>

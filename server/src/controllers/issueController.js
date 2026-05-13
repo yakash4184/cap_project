@@ -4,12 +4,40 @@ import { Issue } from "../models/Issue.js";
 import { createNotification } from "../services/notificationService.js";
 import { emitIssueUpdated } from "../services/socketService.js";
 import { uploadIssueImage } from "../services/uploadService.js";
+import {
+  sendComplaintRegisteredEmail,
+  sendComplaintResolvedEmail,
+} from "../services/emailService.js";
 import { calculatePriority, resolveDepartment } from "../utils/issueMetadata.js";
 import {
   parseIssueCoordinates,
   validateCreateIssuePayload,
   validateUpdateIssuePayload,
 } from "../utils/issueValidation.js";
+
+const REPORTER_POPULATE_FIELDS =
+  "name email role phoneNumber address city state postalCode";
+
+const getScopedDepartment = (user) => user?.department?.trim() || "Urban Services";
+
+const isCitizenProfileComplete = (user) => {
+  if (!user || user.role !== "user") {
+    return true;
+  }
+
+  if (typeof user.isCitizenProfileComplete === "function") {
+    return user.isCitizenProfileComplete();
+  }
+
+  return Boolean(
+    user.name?.trim() &&
+      user.phoneNumber?.trim() &&
+      user.email?.trim() &&
+      user.address?.trim() &&
+      user.city?.trim() &&
+      user.state?.trim()
+  );
+};
 
 const buildFilters = (query) => {
   const filters = {};
@@ -51,6 +79,13 @@ export const createIssue = async (req, res, next) => {
     ) {
       return res.status(400).json({
         message: "Title, description, category, latitude, and longitude are required",
+      });
+    }
+
+    if (!isCitizenProfileComplete(req.user)) {
+      return res.status(403).json({
+        message:
+          "Complete your citizen profile before submitting a complaint.",
       });
     }
 
@@ -103,10 +138,21 @@ export const createIssue = async (req, res, next) => {
       ],
     });
 
-    const populatedIssue = await Issue.findById(issue._id).populate(
-      "reportedBy",
-      "name email role"
-    );
+    const populatedIssue = await Issue.findById(issue._id).populate("reportedBy", REPORTER_POPULATE_FIELDS);
+
+    if (populatedIssue?.reportedBy?.email) {
+      try {
+        await sendComplaintRegisteredEmail({
+          to: populatedIssue.reportedBy.email,
+          citizenName: populatedIssue.reportedBy.name,
+          complaintId: populatedIssue._id.toString(),
+          complaintTitle: populatedIssue.title,
+          submittedAt: populatedIssue.createdAt,
+        });
+      } catch (emailError) {
+        console.error("Complaint registration email failed:", emailError.message);
+      }
+    }
 
     emitIssueUpdated(populatedIssue);
     res.status(201).json(populatedIssue);
@@ -121,10 +167,12 @@ export const getAllIssues = async (req, res, next) => {
 
     if (req.user.role === "user" && req.query.scope !== "all") {
       filters.reportedBy = req.user._id;
+    } else if (req.user.role === "admin") {
+      filters.assignedDepartment = getScopedDepartment(req.user);
     }
 
     const issues = await Issue.find(filters)
-      .populate("reportedBy", "name email role")
+      .populate("reportedBy", REPORTER_POPULATE_FIELDS)
       .sort({ createdAt: -1 });
 
     res.json(issues);
@@ -141,7 +189,7 @@ export const getIssueById = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid issue id" });
     }
 
-    const issue = await Issue.findById(id).populate("reportedBy", "name email role");
+    const issue = await Issue.findById(id).populate("reportedBy", REPORTER_POPULATE_FIELDS);
 
     if (!issue) {
       return res.status(404).json({ message: "Issue not found" });
@@ -150,6 +198,13 @@ export const getIssueById = async (req, res, next) => {
     if (
       req.user.role === "user" &&
       issue.reportedBy._id.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (
+      req.user.role === "admin" &&
+      issue.assignedDepartment !== getScopedDepartment(req.user)
     ) {
       return res.status(403).json({ message: "Forbidden" });
     }
@@ -176,8 +231,13 @@ export const updateIssue = async (req, res, next) => {
 
     const isOwner = issue.reportedBy.toString() === req.user._id.toString();
     const isAdmin = req.user.role === "admin";
+    const adminDepartment = getScopedDepartment(req.user);
 
     if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (isAdmin && issue.assignedDepartment !== adminDepartment) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
@@ -265,10 +325,7 @@ export const updateIssue = async (req, res, next) => {
 
     await issue.save();
 
-    const populatedIssue = await Issue.findById(issue._id).populate(
-      "reportedBy",
-      "name email role"
-    );
+    const populatedIssue = await Issue.findById(issue._id).populate("reportedBy", REPORTER_POPULATE_FIELDS);
 
     if (previousStatus !== populatedIssue.status) {
       await createNotification({
@@ -276,6 +333,20 @@ export const updateIssue = async (req, res, next) => {
         issueId: populatedIssue._id,
         message: `Your issue "${populatedIssue.title}" is now ${populatedIssue.status}.`,
       });
+
+      if (populatedIssue.status === "resolved" && populatedIssue.reportedBy?.email) {
+        try {
+          await sendComplaintResolvedEmail({
+            to: populatedIssue.reportedBy.email,
+            citizenName: populatedIssue.reportedBy.name,
+            complaintId: populatedIssue._id.toString(),
+            complaintTitle: populatedIssue.title,
+            resolvedAt: populatedIssue.updatedAt,
+          });
+        } catch (emailError) {
+          console.error("Complaint resolved email failed:", emailError.message);
+        }
+      }
     }
 
     emitIssueUpdated(populatedIssue);
@@ -301,8 +372,13 @@ export const deleteIssue = async (req, res, next) => {
 
     const isOwner = issue.reportedBy.toString() === req.user._id.toString();
     const isAdmin = req.user.role === "admin";
+    const adminDepartment = getScopedDepartment(req.user);
 
     if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (isAdmin && issue.assignedDepartment !== adminDepartment) {
       return res.status(403).json({ message: "Forbidden" });
     }
 

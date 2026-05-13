@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 
+import { assignableDepartments } from "../utils/issueRules.js";
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -17,13 +19,57 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required() {
+        return this.role === "admin" || this.authProvider === "password";
+      },
       minlength: 6,
+    },
+    authProvider: {
+      type: String,
+      enum: ["password", "otp"],
+      default: "otp",
     },
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
+    },
+    department: {
+      type: String,
+      enum: [...assignableDepartments, ""],
+      default: "",
+      required() {
+        return this.role === "admin";
+      },
+    },
+    phoneNumber: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    address: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    city: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    state: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    postalCode: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    emailVerifiedAt: {
+      type: Date,
+      default: null,
     },
   },
   {
@@ -32,7 +78,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function savePassword(next) {
-  if (!this.isModified("password")) {
+  if (!this.isModified("password") || !this.password) {
     next();
     return;
   }
@@ -42,8 +88,26 @@ userSchema.pre("save", async function savePassword(next) {
 });
 
 userSchema.methods.comparePassword = function comparePassword(candidatePassword) {
+  if (!this.password) {
+    return false;
+  }
+
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-export const User = mongoose.model("User", userSchema);
+userSchema.methods.isCitizenProfileComplete = function isCitizenProfileComplete() {
+  if (this.role !== "user") {
+    return true;
+  }
 
+  return Boolean(
+    this.name?.trim() &&
+      this.phoneNumber?.trim() &&
+      this.email?.trim() &&
+      this.address?.trim() &&
+      this.city?.trim() &&
+      this.state?.trim()
+  );
+};
+
+export const User = mongoose.model("User", userSchema);

@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { ArrowRight, CheckCircle2, Clock3, Layers3, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CheckCircle2, Clock3, Layers3, ShieldCheck } from "lucide-react";
+import { io } from "socket.io-client";
 
 import { AnalyticsPanel } from "@/components/analytics-panel";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -10,11 +11,9 @@ import { IssueEditorModal } from "@/components/issue-editor-modal";
 import { IssueTable } from "@/components/issue-table";
 import { MapPanel } from "@/components/map-panel";
 import { SectionCard } from "@/components/section-card";
-import { adminApi, issueApi } from "@/lib/api";
-import { getStoredSession } from "@/lib/auth";
-import { demoIssues, demoStats } from "@/lib/demo-data";
+import { adminApi, apiBaseUrl, issueApi } from "@/lib/api";
+import { clearSession, getStoredSession } from "@/lib/auth";
 import {
-  departments,
   issueCategories,
   issueStatuses,
   priorityLevels,
@@ -28,46 +27,139 @@ const initialFilters = {
   priorityLevel: "",
   department: "",
 };
+const initialStats = {
+  totalIssues: 0,
+  pendingIssues: 0,
+  inProgressIssues: 0,
+  resolvedIssues: 0,
+  rejectedIssues: 0,
+  stalePendingIssues: 0,
+  averageFirstResponseHours: 0,
+  averageResolutionHours: 0,
+  priorityCounts: { low: 0, medium: 0, high: 0, critical: 0 },
+  trendByCategory: {},
+};
 const LIVE_SYNC_INTERVAL_MS = 20000;
+const AUTH_ERROR_PATTERNS = [
+  "Unauthorized",
+  "Forbidden",
+  "Invalid or expired token",
+  "User not found",
+];
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
   const [session, setSession] = useState(null);
-  const [issues, setIssues] = useState(demoIssues);
-  const [stats, setStats] = useState(demoStats);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [issues, setIssues] = useState([]);
+  const [stats, setStats] = useState(initialStats);
   const [filters, setFilters] = useState(initialFilters);
   const [bulkStatus, setBulkStatus] = useState("resolved");
   const [bulkDepartment, setBulkDepartment] = useState("Urban Services");
   const [selectedIds, setSelectedIds] = useState([]);
-  const [notice, setNotice] = useState(
-    "Demo mode active. Admin JWT and backend are required for live queue management."
-  );
+  const [notice, setNotice] = useState("");
   const [activeIssue, setActiveIssue] = useState(null);
   const [isSavingIssue, setIsSavingIssue] = useState(false);
   const [isDeletingIssue, setIsDeletingIssue] = useState(false);
 
+  const redirectToAdminLogin = useCallback(() => {
+    clearSession();
+    setSession(null);
+    setIsAuthorized(false);
+    setAuthChecked(true);
+    router.replace("/login?next=/admin&role=admin");
+  }, [router]);
+
+  const isAuthError = (message = "") =>
+    AUTH_ERROR_PATTERNS.some((pattern) => message.includes(pattern));
+  const scopedDepartment = session?.user?.department || "Urban Services";
+
+  const topCategory = useMemo(
+    () =>
+      Object.entries(stats.trendByCategory || {}).sort((a, b) => b[1] - a[1])[0]?.[0] ||
+      "N/A",
+    [stats.trendByCategory]
+  );
+
+  const upsertIssue = useCallback((updatedIssue) => {
+    setIssues((currentIssues) => {
+      const existing = currentIssues.find((issue) => issue._id === updatedIssue._id);
+      if (!existing) {
+        return [updatedIssue, ...currentIssues];
+      }
+
+      return currentIssues.map((issue) =>
+        issue._id === updatedIssue._id ? updatedIssue : issue
+      );
+    });
+  }, []);
+
   useEffect(() => {
     const storedSession = getStoredSession();
-    setSession(storedSession);
 
-    if (!storedSession?.token || storedSession.user?.role !== "admin") {
+    if (!storedSession?.token || storedSession?.user?.role !== "admin") {
+      redirectToAdminLogin();
       return;
     }
+
+    const sessionDepartment = storedSession.user?.department || "Urban Services";
+    setSession(storedSession);
+    setIsAuthorized(true);
+    setAuthChecked(true);
+    setBulkDepartment(sessionDepartment);
+    setFilters((currentFilters) => ({
+      ...currentFilters,
+      department: sessionDepartment,
+    }));
+  }, [redirectToAdminLogin]);
+
+  useEffect(() => {
+    if (!isAuthorized || !session?.token) {
+      return;
+    }
+
+    const socketRoot = apiBaseUrl.replace(/\/api$/, "");
+    const socket = io(socketRoot, {
+      autoConnect: true,
+      transports: ["websocket", "polling"],
+    });
+
+    socket.on("issue:updated", (updatedIssue) => {
+      if (
+        updatedIssue?.assignedDepartment &&
+        updatedIssue.assignedDepartment !== scopedDepartment
+      ) {
+        return;
+      }
+      upsertIssue(updatedIssue);
+    });
+
+    socket.on("connect", () => {
+      socket.emit("join:admin-department", scopedDepartment);
+    });
 
     let pollTimer;
 
     const loadAdminData = async ({ silent = false } = {}) => {
       try {
         const [liveStats, liveIssues] = await Promise.all([
-          adminApi.getStats(storedSession.token),
-          adminApi.filter({ token: storedSession.token, filters: initialFilters }),
+          adminApi.getStats(session.token),
+          adminApi.filter({ token: session.token, filters: initialFilters }),
         ]);
 
         setStats(liveStats);
         setIssues(liveIssues);
-        setNotice("");
-      } catch (error) {
         if (!silent) {
-          setNotice(error.message || "Live admin data unavailable, showing demo queue.");
+          setNotice("");
+        }
+      } catch (error) {
+        if (isAuthError(error.message || "")) {
+          redirectToAdminLogin();
+          return;
+        }
+        if (!silent) {
+          setNotice(error.message || "Unable to load admin dashboard data.");
         }
       }
     };
@@ -84,12 +176,13 @@ export default function AdminDashboardPage() {
       if (pollTimer) {
         window.clearInterval(pollTimer);
       }
+      socket.close();
     };
-  }, []);
+  }, [isAuthorized, scopedDepartment, session?.token, upsertIssue]);
 
   const runFilter = async () => {
     if (!session?.token || session.user?.role !== "admin") {
-      setNotice("Admin login required for server-side filtering. Demo queue remains visible.");
+      redirectToAdminLogin();
       return;
     }
 
@@ -103,6 +196,10 @@ export default function AdminDashboardPage() {
       setSelectedIds([]);
       setNotice("");
     } catch (error) {
+      if (isAuthError(error.message || "")) {
+        redirectToAdminLogin();
+        return;
+      }
       setNotice(error.message);
     }
   };
@@ -122,25 +219,13 @@ export default function AdminDashboardPage() {
   };
 
   const handleBulkUpdate = async () => {
-    if (selectedIds.length === 0) {
-      setNotice("Select at least one issue for bulk update.");
+    if (!session?.token || session.user?.role !== "admin") {
+      redirectToAdminLogin();
       return;
     }
 
-    if (!session?.token || session.user?.role !== "admin") {
-      setIssues((currentIssues) =>
-        currentIssues.map((issue) =>
-          selectedIds.includes(issue._id)
-            ? {
-                ...issue,
-                status: bulkStatus,
-                assignedDepartment: bulkDepartment,
-              }
-            : issue
-        )
-      );
-      setSelectedIds([]);
-      setNotice("Demo queue updated locally.");
+    if (selectedIds.length === 0) {
+      setNotice("Select at least one issue for bulk update.");
       return;
     }
 
@@ -165,30 +250,17 @@ export default function AdminDashboardPage() {
       setSelectedIds([]);
       setNotice("Bulk update completed.");
     } catch (error) {
+      if (isAuthError(error.message || "")) {
+        redirectToAdminLogin();
+        return;
+      }
       setNotice(error.message);
     }
   };
 
   const handleSaveIssue = async (issue, payload) => {
     if (!session?.token || session.user?.role !== "admin") {
-      setIssues((currentIssues) =>
-        currentIssues.map((currentIssue) =>
-          currentIssue._id === issue._id
-            ? {
-                ...currentIssue,
-                ...payload,
-                location: {
-                  ...currentIssue.location,
-                  lat: Number(payload.lat),
-                  lng: Number(payload.lng),
-                  address: payload.address,
-                },
-              }
-            : currentIssue
-        )
-      );
-      setActiveIssue(null);
-      setNotice("Demo issue updated locally.");
+      redirectToAdminLogin();
       return;
     }
 
@@ -209,6 +281,10 @@ export default function AdminDashboardPage() {
       setActiveIssue(updatedIssue);
       setNotice("Issue updated successfully.");
     } catch (error) {
+      if (isAuthError(error.message || "")) {
+        redirectToAdminLogin();
+        return;
+      }
       setNotice(error.message);
     } finally {
       setIsSavingIssue(false);
@@ -217,11 +293,7 @@ export default function AdminDashboardPage() {
 
   const handleDeleteIssue = async (issue) => {
     if (!session?.token || session.user?.role !== "admin") {
-      setIssues((currentIssues) =>
-        currentIssues.filter((currentIssue) => currentIssue._id !== issue._id)
-      );
-      setActiveIssue(null);
-      setNotice("Demo issue deleted locally.");
+      redirectToAdminLogin();
       return;
     }
 
@@ -244,11 +316,27 @@ export default function AdminDashboardPage() {
       setSelectedIds((currentIds) => currentIds.filter((id) => id !== issue._id));
       setNotice("Issue deleted successfully.");
     } catch (error) {
+      if (isAuthError(error.message || "")) {
+        redirectToAdminLogin();
+        return;
+      }
       setNotice(error.message);
     } finally {
       setIsDeletingIssue(false);
     }
   };
+
+  if (!authChecked) {
+    return (
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-center px-4 py-16 text-sm font-semibold text-slate-600">
+        Verifying admin authentication...
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return null;
+  }
 
   return (
     <DashboardShell
@@ -256,19 +344,9 @@ export default function AdminDashboardPage() {
       title="Triage queue, assign departments, and clear stale backlog."
       description="Municipal operators can filter the queue by date, category, and status, then apply bulk actions for aged issues. The interface is designed for daily oversight and fast operational handoffs."
       actions={
-        session?.user?.role === "admin" ? (
-          <div className="rounded-full border border-white/70 bg-white/75 px-4 py-3 text-sm font-semibold text-slate-700">
-            Admin: {session.user?.name}
-          </div>
-        ) : (
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 rounded-full bg-lagoon px-5 py-3 text-sm font-semibold text-white shadow-glow hover:bg-blue-700"
-          >
-            Login as admin
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        )
+        <div className="rounded-full border border-white/70 bg-white/75 px-4 py-3 text-sm font-semibold text-slate-700">
+          Admin: {session?.user?.name} ({scopedDepartment})
+        </div>
       }
     >
       {notice ? (
@@ -277,12 +355,13 @@ export default function AdminDashboardPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         {[
           { label: "Total", value: stats.totalIssues, icon: Layers3 },
           { label: "Pending", value: stats.pendingIssues, icon: Clock3 },
           { label: "In Progress", value: stats.inProgressIssues, icon: ShieldCheck },
           { label: "Resolved", value: stats.resolvedIssues, icon: CheckCircle2 },
+          { label: "Rejected", value: stats.rejectedIssues || 0, icon: ShieldCheck },
           { label: "15+ Day Pending", value: stats.stalePendingIssues, icon: Clock3 },
         ].map((card) => {
           const Icon = card.icon;
@@ -422,14 +501,10 @@ export default function AdminDashboardPage() {
                   department: event.target.value,
                 }))
               }
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+              disabled
             >
-              <option value="">All departments</option>
-              {departments.map((department) => (
-                <option key={department} value={department}>
-                  {department}
-                </option>
-              ))}
+              <option value={scopedDepartment}>{scopedDepartment}</option>
             </select>
           </label>
         </div>
@@ -456,10 +531,7 @@ export default function AdminDashboardPage() {
         </SectionCard>
         <SectionCard className="bg-white/80">
           <p className="text-sm text-slate-500">Top category volume</p>
-          <p className="mt-2 text-lg font-semibold tracking-tight text-ink">
-            {Object.entries(stats.trendByCategory || {}).sort((a, b) => b[1] - a[1])[0]?.[0] ||
-              "N/A"}
-          </p>
+          <p className="mt-2 text-lg font-semibold tracking-tight text-ink">{topCategory}</p>
         </SectionCard>
       </div>
 
@@ -473,9 +545,9 @@ export default function AdminDashboardPage() {
               Resolve or reroute multiple issues at once
             </h3>
           </div>
-            <div className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900">
-              Selected: {selectedIds.length}
-            </div>
+          <div className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900">
+            Selected: {selectedIds.length}
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
@@ -498,13 +570,10 @@ export default function AdminDashboardPage() {
             <select
               value={bulkDepartment}
               onChange={(event) => setBulkDepartment(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+              disabled
             >
-              {departments.map((department) => (
-                <option key={department} value={department}>
-                  {department}
-                </option>
-              ))}
+              <option value={scopedDepartment}>{scopedDepartment}</option>
             </select>
           </label>
           <button
@@ -520,6 +589,7 @@ export default function AdminDashboardPage() {
       <IssueTable
         issues={issues}
         showSelection
+        showReporterDetails
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
         onToggleAll={handleToggleAll}

@@ -24,6 +24,12 @@ io.on("connection", (socket) => {
       socket.join(`user:${userId}`);
     }
   });
+
+  socket.on("join:admin-department", (department) => {
+    if (typeof department === "string" && department.trim()) {
+      socket.join(`admin-department:${department.trim()}`);
+    }
+  });
 });
 
 attachSocket(io);
