@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Clock3, Layers3, ShieldCheck } from "lucide-react";
-import { io } from "socket.io-client";
 
 import { AnalyticsPanel } from "@/components/analytics-panel";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -11,7 +10,7 @@ import { IssueEditorModal } from "@/components/issue-editor-modal";
 import { IssueTable } from "@/components/issue-table";
 import { MapPanel } from "@/components/map-panel";
 import { SectionCard } from "@/components/section-card";
-import { adminApi, apiBaseUrl, issueApi } from "@/lib/api";
+import { adminApi, issueApi } from "@/lib/api";
 import { clearSession, getStoredSession } from "@/lib/auth";
 import {
   issueCategories,
@@ -39,7 +38,7 @@ const initialStats = {
   priorityCounts: { low: 0, medium: 0, high: 0, critical: 0 },
   trendByCategory: {},
 };
-const LIVE_SYNC_INTERVAL_MS = 20000;
+const LIVE_SYNC_INTERVAL_MS = 5000;
 const AUTH_ERROR_PATTERNS = [
   "Unauthorized",
   "Forbidden",
@@ -119,26 +118,6 @@ export default function AdminDashboardPage() {
       return;
     }
 
-    const socketRoot = apiBaseUrl.replace(/\/api$/, "");
-    const socket = io(socketRoot, {
-      autoConnect: true,
-      transports: ["websocket", "polling"],
-    });
-
-    socket.on("issue:updated", (updatedIssue) => {
-      if (
-        updatedIssue?.assignedDepartment &&
-        updatedIssue.assignedDepartment !== scopedDepartment
-      ) {
-        return;
-      }
-      upsertIssue(updatedIssue);
-    });
-
-    socket.on("connect", () => {
-      socket.emit("join:admin-department", scopedDepartment);
-    });
-
     let pollTimer;
 
     const loadAdminData = async ({ silent = false } = {}) => {
@@ -176,7 +155,6 @@ export default function AdminDashboardPage() {
       if (pollTimer) {
         window.clearInterval(pollTimer);
       }
-      socket.close();
     };
   }, [isAuthorized, scopedDepartment, session?.token, upsertIssue]);
 

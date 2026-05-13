@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 
 const getJsonHeaders = (token) => ({
   "Content-Type": "application/json",
@@ -20,7 +20,7 @@ async function safeFetch(url, options) {
   try {
     return await fetch(url, options);
   } catch (error) {
-    throw new Error(`Backend server unreachable at ${API_BASE_URL}.`);
+    throw new Error("Backend request failed. Please check server status.");
   }
 }
 

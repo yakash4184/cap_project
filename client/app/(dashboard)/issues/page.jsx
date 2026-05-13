@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, Clock3, RefreshCcw, TriangleAlert, XCircle } from "lucide-react";
-import { io } from "socket.io-client";
 
 import { CitizenProfileForm } from "@/components/citizen-profile-form";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -13,10 +12,10 @@ import { IssueTable } from "@/components/issue-table";
 import { MapPanel } from "@/components/map-panel";
 import { NotificationPanel } from "@/components/notification-panel";
 import { SectionCard } from "@/components/section-card";
-import { apiBaseUrl, authApi, issueApi, notificationApi } from "@/lib/api";
+import { authApi, issueApi, notificationApi } from "@/lib/api";
 import { clearSession, getStoredSession, storeSession } from "@/lib/auth";
 
-const LIVE_SYNC_INTERVAL_MS = 15000;
+const LIVE_SYNC_INTERVAL_MS = 5000;
 const filterOptions = ["all", "pending", "in-progress", "resolved", "rejected"];
 const AUTH_ERROR_PATTERNS = [
   "Unauthorized",
@@ -118,11 +117,6 @@ export default function CitizenIssuesPage() {
     }
 
     let pollTimer;
-    const socketRoot = apiBaseUrl.replace(/\/api$/, "");
-    const socket = io(socketRoot, {
-      autoConnect: true,
-      transports: ["websocket", "polling"],
-    });
 
     const loadLiveData = async ({ silent = false } = {}) => {
       try {
@@ -157,36 +151,6 @@ export default function CitizenIssuesPage() {
 
     loadLiveData();
 
-    socket.on("connect", () => {
-      socket.emit("join:user", session.user?.id);
-    });
-
-    socket.on("issue:updated", (updatedIssue) => {
-      const reporterId =
-        updatedIssue?.reportedBy?._id ||
-        updatedIssue?.reportedBy?.id ||
-        updatedIssue?.reportedBy;
-
-      if (reporterId && reporterId !== session.user?.id) {
-        return;
-      }
-
-      setIssues((currentIssues) => {
-        const existing = currentIssues.find((issue) => issue._id === updatedIssue._id);
-        if (!existing) {
-          return [updatedIssue, ...currentIssues];
-        }
-
-        return currentIssues.map((issue) =>
-          issue._id === updatedIssue._id ? updatedIssue : issue
-        );
-      });
-    });
-
-    socket.on("notification:new", (notification) => {
-      setNotifications((currentNotifications) => [notification, ...currentNotifications]);
-    });
-
     pollTimer = window.setInterval(() => {
       if (document.visibilityState === "visible") {
         loadLiveData({ silent: true });
@@ -197,7 +161,6 @@ export default function CitizenIssuesPage() {
       if (pollTimer) {
         window.clearInterval(pollTimer);
       }
-      socket.close();
     };
   }, [isAuthorized, session?.token]);
 

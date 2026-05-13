@@ -36,21 +36,20 @@ This is currently a responsive web platform, not a dedicated mobile app. It supp
 ## Tech Stack
 
 - Frontend: Next.js 15, React 18, Tailwind CSS
-- Backend: Node.js, Express.js
+- Backend: Next.js Route Handlers (single app backend)
 - Database: MongoDB Atlas with Mongoose
 - Authentication: JWT
 - Uploads: Multer + Cloudinary-ready upload service
 - Maps: Google Maps JavaScript API
-- Realtime Hooks: Socket.IO
-- Automation: node-cron
-- Deployment: Vercel frontend and Vercel backend
+- Realtime Sync: Fast polling + backend event hooks
+- Automation: Vercel Cron route (`/api/cron/auto-resolve`)
+- Deployment: Single Vercel project (client)
 
 ## Folder Structure
 
 ```text
 cap_project/
-  client/   Frontend application
-  server/   Backend API
+  client/   Next.js app (UI + API route handlers)
 ```
 
 ## Current Implemented Features
@@ -168,7 +167,6 @@ cap_project/
 ```bash
 npm install
 npm install --workspace client
-npm install --workspace server
 ```
 
 ### Frontend Environment
@@ -176,100 +174,67 @@ npm install --workspace server
 Create `client/.env.local`:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:5001/api
+NEXT_PUBLIC_API_BASE_URL=/api
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
-```
-
-### Backend Environment
-
-Create `server/.env`:
-
-```env
-PORT=5001
-CLIENT_URL=http://localhost:3000
 MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_secret
 JWT_EXPIRES_IN=7d
+ADMIN_REGISTRATION_SECRET=1234
+OTP_EXPIRY_MINUTES=10
+OTP_RESEND_COOLDOWN_SECONDS=60
+OTP_MAX_VERIFY_ATTEMPTS=5
+OTP_HASH_SECRET=your_otp_hash_secret
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+EMAIL_FROM=
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 AUTO_RESOLVE_OLD_ISSUES=false
 AUTO_RESOLVE_DAYS=15
+CRON_SECRET=your_vercel_cron_secret
 ```
 
 ### Run Locally
 
-Start backend:
+Start single Next.js app (frontend + backend route handlers):
 
 ```bash
-npm run dev:server
-```
-
-Start frontend:
-
-```bash
-npm run dev:client
+npm run dev
 ```
 
 ## Deployment
 
-### Frontend Deployment
+### Single App Deployment
 
 - Platform: Vercel
 - Root Directory: `client`
-- Required environment variable:
-
-```env
-NEXT_PUBLIC_API_BASE_URL=https://your-backend-domain.vercel.app/api
-```
-
-### Backend Deployment
-
-- Platform: Vercel
-- Root Directory: `server`
-- Install Command:
-
-```bash
-npm install --prefix=..
-```
-
-- Required backend environment variables:
-
-```env
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret
-JWT_EXPIRES_IN=7d
-ADMIN_REGISTRATION_SECRET=your_admin_bootstrap_secret
-CRON_SECRET=your_vercel_cron_secret
-CLIENT_URL=https://your-frontend-domain.vercel.app
-AUTO_RESOLVE_OLD_ISSUES=false
-AUTO_RESOLVE_DAYS=15
-```
+- Add all environment variables from `client/.env.example`
 
 ### Production Activation Checklist
 
-To fully activate the Phase 1 production hardening changes on Vercel:
+To fully activate production hardening in single-app deployment:
 
-1. Add `ADMIN_REGISTRATION_SECRET` to the backend Vercel project.
-2. Add `CRON_SECRET` to the backend Vercel project.
+1. Add `ADMIN_REGISTRATION_SECRET` to the Vercel project.
+2. Add `CRON_SECRET` to the Vercel project.
 3. Keep `AUTO_RESOLVE_OLD_ISSUES=true` if you want stale issue auto-resolution enabled.
-4. Redeploy the backend project after saving those variables.
+4. Redeploy after saving those variables.
 5. Confirm cron setup in Vercel by checking:
    `Settings -> Cron Jobs`
 6. Test secure admin creation using:
    `POST /api/auth/register-admin`
-7. Test the scheduler manually with the production backend URL:
+7. Test the scheduler manually with the production app URL:
    `GET /api/cron/auto-resolve`
    using header:
    `Authorization: Bearer <CRON_SECRET>`
 
-When these steps are completed and the backend is redeployed, admin security and the production-safe auto-resolve scheduler will be active in production.
+When these steps are completed and the app is redeployed, admin security and the production-safe auto-resolve scheduler will be active in production.
 
-### Current Deployed URLs
+### Current Deployed URL
 
-- Frontend: `https://cap-project-client-one.vercel.app`
-- Backend: `https://cap-project-server-xtx2.vercel.app`
-- Backend health check: `https://cap-project-server-xtx2.vercel.app/api/health`
+- App (UI + API): `https://cap-project-client-one.vercel.app`
 
 ## Feature Review Against the Project Description
 

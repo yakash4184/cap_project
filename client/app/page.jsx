@@ -230,8 +230,9 @@ export default function HomePage() {
                 Built to run as a modern public service platform.
               </h2>
               <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                Next.js frontend, Express API, MongoDB persistence, JWT authentication,
-                and map-enabled reporting workflows are already integrated for deployment.
+                Next.js frontend and Route Handler backend, MongoDB persistence, JWT
+                authentication, and map-enabled reporting workflows are already integrated
+                for deployment.
               </p>
             </div>
             <div className="rounded-2xl border border-blue-100 bg-white/95 p-5 shadow-glow">

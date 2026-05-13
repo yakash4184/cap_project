@@ -6,9 +6,9 @@ Full-stack civic issue reporting platform
 
 Stack:
 - Frontend: Next.js, React, Tailwind CSS
-- Backend: Node.js, Express, MongoDB, Mongoose
+- Backend: Next.js Route Handlers, MongoDB, Mongoose
 - Authentication: JWT-based auth with Citizen and Admin roles
-- Current Local URLs: Frontend on localhost:3000, Backend on localhost:5001
+- Current Local URL: App UI + API on localhost:3000
 
 How To Use The Platform:
 1. Open the frontend on http://localhost:3000
@@ -43,20 +43,20 @@ Working Features:
 23. Department assignment flow
 24. Map section with issue location data
 25. Google Maps fallback UI
-26. Socket.IO realtime wiring
+26. Realtime sync wiring (poll + backend hooks)
 27. Auto-resolve cron job code
 28. Responsive modern UI
-29. Frontend ready for Vercel deployment
-30. Backend ready for Render or Railway deployment
+29. Single app ready for Vercel deployment
+30. API already integrated in Next.js app
 
 Features That Need Extra Setup:
 1. Real Cloudinary image upload requires Cloudinary environment variables
 2. Live Google Maps markers require a Google Maps API key
-3. Production cron behavior requires backend deployment on a live host
+3. Production cron behavior requires Vercel cron and env setup
 4. Production realtime verification should be tested after deployment
 
 Deployment Notes:
-1. Deploy the frontend from the client folder on Vercel
-2. Deploy the backend separately on Render or Railway
-3. Set NEXT_PUBLIC_API_BASE_URL in frontend environment variables
+1. Deploy single app from the client folder on Vercel
+2. Set all env vars from client/.env.example in Vercel
+3. Keep NEXT_PUBLIC_API_BASE_URL=/api
 4. Use MongoDB Atlas for the production database

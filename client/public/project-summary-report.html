@@ -67,9 +67,9 @@
     <div class="meta">
       <p><strong>Project Type:</strong> Full-stack civic issue reporting platform</p>
       <p><strong>Frontend:</strong> Next.js, React, Tailwind CSS</p>
-      <p><strong>Backend:</strong> Node.js, Express, MongoDB, Mongoose</p>
+      <p><strong>Backend:</strong> Next.js Route Handlers, MongoDB, Mongoose</p>
       <p><strong>Authentication:</strong> JWT-based auth with Citizen and Admin roles</p>
-      <p><strong>Current Local URLs:</strong> Frontend on <code>localhost:3000</code>, Backend on <code>localhost:5001</code></p>
+      <p><strong>Current Local URL:</strong> App UI + API on <code>localhost:3000</code></p>
     </div>
 
     <div class="section">
@@ -117,11 +117,11 @@
         <li>Department assignment flow</li>
         <li>Map section with issue location data</li>
         <li>Google Maps fallback UI</li>
-        <li>Socket.IO realtime wiring</li>
+        <li>Realtime sync wiring (poll + backend hooks)</li>
         <li>Auto-resolve cron job code</li>
         <li>Responsive modern UI</li>
-        <li>Frontend ready for Vercel deployment</li>
-        <li>Backend ready for Render or Railway deployment</li>
+        <li>Single app ready for Vercel deployment</li>
+        <li>API already integrated in Next.js app</li>
       </ul>
     </div>
 
@@ -130,7 +130,7 @@
       <ul>
         <li>Real Cloudinary image upload requires Cloudinary environment variables</li>
         <li>Live Google Maps markers require a Google Maps API key</li>
-        <li>Production cron behavior requires backend deployment on a live host</li>
+        <li>Production cron behavior requires Vercel cron and env setup</li>
         <li>Production realtime verification should be tested after deployment</li>
       </ul>
     </div>
@@ -138,9 +138,9 @@
     <div class="section">
       <h2>Deployment Notes</h2>
       <ul>
-        <li>Deploy the frontend from the <code>client</code> folder on Vercel</li>
-        <li>Deploy the backend separately on Render or Railway</li>
-        <li>Set <code>NEXT_PUBLIC_API_BASE_URL</code> in frontend environment variables</li>
+        <li>Deploy single app from the <code>client</code> folder on Vercel</li>
+        <li>Set all env vars from <code>client/.env.example</code> in Vercel</li>
+        <li>Keep <code>NEXT_PUBLIC_API_BASE_URL</code> set to <code>/api</code></li>
         <li>Use MongoDB Atlas for the production database</li>
       </ul>
     </div>
