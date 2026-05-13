@@ -8,7 +8,7 @@ export function NotificationPanel({ notifications, onMarkRead }) {
   return (
     <SectionCard>
       <div className="mb-5">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
           Notifications
         </p>
         <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">
@@ -18,14 +18,14 @@ export function NotificationPanel({ notifications, onMarkRead }) {
 
       <div className="space-y-3">
         {notifications.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-5 text-sm text-slate-500">
+          <div className="rounded-xl border border-dashed border-blue-200 bg-white/80 p-5 text-sm text-slate-500">
             No notifications yet.
           </div>
         ) : null}
         {notifications.map((notification) => (
           <div
             key={notification._id}
-            className="rounded-2xl border border-slate-200 bg-white/75 p-4"
+            className="rounded-xl border border-blue-100 bg-white/90 p-4"
           >
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm font-medium leading-6 text-slate-700">

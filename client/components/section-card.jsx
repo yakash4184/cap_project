@@ -4,7 +4,7 @@ export function SectionCard({ className, children }) {
   return (
     <section
       className={clsx(
-        "surface-panel gradient-border relative overflow-hidden rounded-[28px] p-6 sm:p-7",
+        "surface-panel gradient-border relative overflow-hidden rounded-2xl p-5 sm:p-6",
         className
       )}
     >
@@ -12,4 +12,3 @@ export function SectionCard({ className, children }) {
     </section>
   );
 }
-

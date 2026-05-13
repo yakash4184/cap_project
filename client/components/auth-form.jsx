@@ -43,11 +43,11 @@ export function AuthForm({ mode = "login" }) {
 
   return (
     <div className="grid min-h-[calc(100vh-120px)] place-items-center px-4 py-12">
-      <div className="glass-panel w-full max-w-xl rounded-[32px] p-8 sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.26em] text-lagoon">
+      <div className="glass-panel w-full max-w-xl rounded-3xl p-8 sm:p-10">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lagoon sm:text-sm">
           {isLogin ? "Welcome Back" : "Create Account"}
         </p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-ink">
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
           {isLogin ? "Access the civic operations hub" : "Start reporting civic issues"}
         </h1>
         <p className="mt-4 text-base leading-7 text-slate-600">
@@ -118,7 +118,7 @@ export function AuthForm({ mode = "login" }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-lagoon px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
             {isLogin ? "Login" : "Create account"}

@@ -73,7 +73,7 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
         <button
           type="button"
           onClick={handleUseLocation}
-          className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-lagoon hover:text-lagoon"
+          className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-lagoon hover:text-lagoon"
         >
           <Crosshair className="h-4 w-4" />
           Use GPS
@@ -87,7 +87,7 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
             required
             value={formState.title}
             onChange={(event) => updateField("title", event.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none ring-0 transition focus:border-lagoon"
+            className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none ring-0 transition focus:border-lagoon"
             placeholder="Broken streetlight near community gate"
           />
         </label>
@@ -99,7 +99,7 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
             rows={4}
             value={formState.description}
             onChange={(event) => updateField("description", event.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
+            className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
             placeholder="Explain the issue, urgency, and impact on residents."
           />
         </label>
@@ -109,7 +109,7 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
           <select
             value={formState.category}
             onChange={(event) => updateField("category", event.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
+            className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
           >
             {issueCategories.map((category) => (
               <option key={category} value={category}>
@@ -124,7 +124,7 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
           <select
             value={formState.assignedDepartment}
             onChange={(event) => updateField("assignedDepartment", event.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
+            className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
           >
             {departments.map((department) => (
               <option key={department} value={department}>
@@ -139,7 +139,7 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
           <input
             value={formState.address}
             onChange={(event) => updateField("address", event.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
+            className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
             placeholder="Sector 12, near water tank"
           />
         </label>
@@ -150,7 +150,7 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
             required
             value={formState.lat}
             onChange={(event) => updateField("lat", event.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
+            className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
             placeholder="28.6139"
           />
         </label>
@@ -161,7 +161,7 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
             required
             value={formState.lng}
             onChange={(event) => updateField("lng", event.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
+            className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
             placeholder="77.2090"
           />
         </label>
@@ -174,10 +174,10 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
             <input
               value={formState.imageUrl}
               onChange={(event) => updateField("imageUrl", event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
+              className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none transition focus:border-lagoon"
               placeholder="https://..."
             />
-            <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-lagoon hover:text-lagoon">
+            <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-blue-200 bg-blue-50/55 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-lagoon hover:text-lagoon">
               <ImagePlus className="h-4 w-4" />
               Select file
               <input
@@ -199,7 +199,7 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white shadow-glow transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full bg-lagoon px-6 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
             Submit Issue
@@ -209,4 +209,3 @@ export function IssueReportForm({ onSubmit, isSubmitting }) {
     </SectionCard>
   );
 }
-

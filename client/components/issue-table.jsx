@@ -18,9 +18,68 @@ export function IssueTable({
 
   return (
     <SectionCard className="overflow-hidden p-0">
-      <div className="overflow-x-auto">
+      <div className="md:hidden">
+        {showSelection ? (
+          <div className="flex items-center justify-between border-b border-blue-100 bg-blue-50/60 px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Select issues
+            </p>
+            <button
+              type="button"
+              onClick={() => onToggleAll?.()}
+              className="rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700"
+            >
+              {allSelected ? "Clear all" : "Select all"}
+            </button>
+          </div>
+        ) : null}
+
+        {issues.length === 0 ? (
+          <div className="px-5 py-16 text-center text-sm text-slate-500">{emptyMessage}</div>
+        ) : null}
+
+        <div className="divide-y divide-blue-100">
+          {issues.map((issue) => (
+            <article key={issue._id} className="space-y-3 bg-white px-4 py-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-base font-semibold text-ink">{issue.title}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{issue.description}</p>
+                </div>
+                {showSelection ? (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(issue._id)}
+                    onChange={() => onToggleSelect?.(issue._id)}
+                    className="mt-1 h-4 w-4 rounded border-slate-300"
+                  />
+                ) : null}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 capitalize">
+                  {issue.category}
+                </span>
+                <span className="rounded-full bg-blue-50 px-2.5 py-1">
+                  {issue.assignedDepartment}
+                </span>
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 uppercase tracking-[0.14em]">
+                  {formatDate(issue.createdAt)}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <StatusBadge status={issue.status} />
+                {hasActions ? <div>{renderActions(issue)}</div> : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="min-w-full text-left">
-          <thead className="border-b border-slate-200 bg-slate-50/90 text-xs uppercase tracking-[0.24em] text-slate-500">
+          <thead className="border-b border-blue-100 bg-blue-50/75 text-xs uppercase tracking-[0.22em] text-slate-500">
             <tr>
               {showSelection ? (
                 <th className="px-5 py-4">
@@ -55,7 +114,7 @@ export function IssueTable({
             {issues.map((issue) => (
               <tr
                 key={issue._id}
-                className="border-b border-slate-100 bg-white/70 text-sm text-slate-700 transition hover:bg-white"
+                className="border-b border-blue-50 bg-white/80 text-sm text-slate-700 transition hover:bg-blue-50/40"
               >
                 {showSelection ? (
                   <td className="px-5 py-4">

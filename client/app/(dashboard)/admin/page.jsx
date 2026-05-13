@@ -263,7 +263,7 @@ export default function AdminDashboardPage() {
         ) : (
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white shadow-glow"
+            className="inline-flex items-center gap-2 rounded-full bg-lagoon px-5 py-3 text-sm font-semibold text-white shadow-glow hover:bg-blue-700"
           >
             Login as admin
             <ArrowRight className="h-4 w-4" />
@@ -272,7 +272,7 @@ export default function AdminDashboardPage() {
       }
     >
       {notice ? (
-        <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+        <div className="rounded-xl border border-blue-200 bg-blue-50/90 px-5 py-4 text-sm text-blue-900">
           {notice}
         </div>
       ) : null}
@@ -295,7 +295,7 @@ export default function AdminDashboardPage() {
                     {card.value}
                   </p>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ink text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-lagoon text-white">
                   <Icon className="h-5 w-5" />
                 </div>
               </div>
@@ -317,7 +317,7 @@ export default function AdminDashboardPage() {
           <button
             type="button"
             onClick={runFilter}
-            className="rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white shadow-glow"
+            className="rounded-full bg-lagoon px-5 py-3 text-sm font-semibold text-white shadow-glow hover:bg-blue-700"
           >
             Apply Filters
           </button>
@@ -473,9 +473,9 @@ export default function AdminDashboardPage() {
               Resolve or reroute multiple issues at once
             </h3>
           </div>
-          <div className="rounded-full bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">
-            Selected: {selectedIds.length}
-          </div>
+            <div className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900">
+              Selected: {selectedIds.length}
+            </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
@@ -510,7 +510,7 @@ export default function AdminDashboardPage() {
           <button
             type="button"
             onClick={handleBulkUpdate}
-            className="self-end rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white shadow-glow"
+            className="self-end rounded-full bg-lagoon px-5 py-3 text-sm font-semibold text-white shadow-glow hover:bg-blue-700"
           >
             Apply Bulk Update
           </button>
@@ -527,7 +527,7 @@ export default function AdminDashboardPage() {
           <button
             type="button"
             onClick={() => setActiveIssue(issue)}
-            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700"
+            className="rounded-full border border-blue-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700 hover:bg-blue-50"
           >
             Manage
           </button>

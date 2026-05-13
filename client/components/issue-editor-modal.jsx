@@ -52,11 +52,11 @@ export function IssueEditorModal({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 px-4 py-8 backdrop-blur-sm">
-      <div className="surface-panel relative max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-[32px] p-7 sm:p-8">
+      <div className="surface-panel relative max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl p-7 sm:p-8">
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-5 top-5 rounded-full border border-slate-200 bg-white p-2 text-slate-600"
+          className="absolute right-5 top-5 rounded-full border border-blue-100 bg-white p-2 text-slate-600 hover:bg-blue-50"
         >
           <X className="h-4 w-4" />
         </button>
@@ -209,7 +209,7 @@ export function IssueEditorModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+              className="rounded-full border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50"
             >
               Close
             </button>
@@ -217,7 +217,7 @@ export function IssueEditorModal({
               type="button"
               onClick={() => onSave?.(issue, formState)}
               disabled={isSaving || (!isAdmin && !citizenCanEdit)}
-              className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white shadow-glow disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full bg-lagoon px-5 py-3 text-sm font-semibold text-white shadow-glow hover:bg-blue-700 disabled:opacity-60"
             >
               {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
               Save Changes

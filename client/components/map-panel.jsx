@@ -55,7 +55,7 @@ export function MapPanel({ issues }) {
             {
               featureType: "all",
               elementType: "geometry",
-              stylers: [{ color: "#ebe6dc" }],
+              stylers: [{ color: "#eaf2ff" }],
             },
           ],
         });
@@ -80,23 +80,23 @@ export function MapPanel({ issues }) {
   }, [apiKey, issues]);
 
   return (
-    <SectionCard className="min-h-[420px]">
+    <SectionCard>
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
             Geospatial View
           </p>
           <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">
             Map of active civic issues
           </h3>
         </div>
-        <div className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600">
+        <div className="rounded-full border border-blue-100 bg-blue-50/70 px-4 py-2 text-sm font-semibold text-slate-600">
           {issues.length} markers
         </div>
       </div>
 
       {issues.length === 0 ? (
-        <div className="grid h-[320px] place-items-center rounded-[24px] border border-dashed border-slate-300 bg-white/75 text-center">
+        <div className="grid h-[240px] place-items-center rounded-2xl border border-dashed border-blue-200 bg-white/75 text-center sm:h-[300px]">
           <div className="max-w-sm px-6">
             <p className="text-xl font-semibold text-ink">No issues to map</p>
             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -105,11 +105,14 @@ export function MapPanel({ issues }) {
           </div>
         </div>
       ) : apiKey ? (
-        <div ref={mapRef} className="h-[320px] overflow-hidden rounded-[24px] border border-slate-200" />
+        <div
+          ref={mapRef}
+          className="h-[240px] overflow-hidden rounded-2xl border border-blue-100 sm:h-[300px]"
+        />
       ) : (
-        <div className="grid h-[320px] place-items-center rounded-[24px] border border-dashed border-slate-300 bg-gradient-to-br from-white to-slate-100 text-center">
+        <div className="grid h-[240px] place-items-center rounded-2xl border border-dashed border-blue-200 bg-gradient-to-br from-white to-blue-50 text-center sm:h-[300px]">
           <div className="max-w-md px-6">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-ink text-white">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-lagoon text-white">
               <MapPinned className="h-6 w-6" />
             </div>
             <p className="text-xl font-semibold text-ink">Google Maps API key missing</p>
@@ -124,7 +127,7 @@ export function MapPanel({ issues }) {
       {!mapReady && !apiKey && issues.length > 0 ? (
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {issues.slice(0, 4).map((issue) => (
-            <div key={issue._id} className="rounded-2xl border border-slate-200 bg-white/80 p-4">
+            <div key={issue._id} className="rounded-xl border border-blue-100 bg-white/90 p-4">
               <p className="text-sm font-semibold text-ink">{issue.title}</p>
               <p className="mt-1 text-sm text-slate-500">{issue.location.address}</p>
               <p className="mt-2 text-xs uppercase tracking-[0.24em] text-slate-400">

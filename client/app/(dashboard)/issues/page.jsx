@@ -238,7 +238,7 @@ export default function CitizenIssuesPage() {
         ) : (
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white shadow-glow"
+            className="inline-flex items-center gap-2 rounded-full bg-lagoon px-5 py-3 text-sm font-semibold text-white shadow-glow hover:bg-blue-700"
           >
             Login for live access
             <ArrowRight className="h-4 w-4" />
@@ -247,7 +247,7 @@ export default function CitizenIssuesPage() {
       }
     >
       {notice ? (
-        <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+        <div className="rounded-xl border border-blue-200 bg-blue-50/90 px-5 py-4 text-sm text-blue-900">
           {notice}
         </div>
       ) : null}
@@ -269,7 +269,7 @@ export default function CitizenIssuesPage() {
                     {card.value}
                   </p>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ink text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-lagoon text-white">
                   <Icon className="h-5 w-5" />
                 </div>
               </div>
@@ -301,8 +301,8 @@ export default function CitizenIssuesPage() {
                 onClick={() => setFilter(option)}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                   filter === option
-                    ? "bg-ink text-white"
-                    : "border border-slate-300 bg-white text-slate-600"
+                    ? "bg-lagoon text-white"
+                    : "border border-blue-200 bg-white text-slate-600"
                 }`}
               >
                 {option}
@@ -317,7 +317,7 @@ export default function CitizenIssuesPage() {
             <button
               type="button"
               onClick={() => setActiveIssue(issue)}
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700"
+              className="rounded-full border border-blue-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700 hover:bg-blue-50"
             >
               View / Edit
             </button>

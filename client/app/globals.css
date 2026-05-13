@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f6f1e7;
-  --surface: rgba(255, 255, 255, 0.72);
-  --surface-strong: rgba(255, 255, 255, 0.92);
-  --foreground: #09111f;
-  --muted: #5d6777;
-  --border: rgba(9, 17, 31, 0.08);
+  --bg: #f5f9ff;
+  --surface: rgba(255, 255, 255, 0.86);
+  --surface-strong: rgba(255, 255, 255, 0.96);
+  --foreground: #0b2343;
+  --muted: #50627a;
+  --border: rgba(15, 95, 198, 0.12);
 }
 
 * {
@@ -25,15 +25,15 @@ body {
   font-family: var(--font-body), sans-serif;
   color: var(--foreground);
   background:
-    radial-gradient(circle at top left, rgba(13, 148, 136, 0.18), transparent 25%),
-    radial-gradient(circle at top right, rgba(242, 106, 46, 0.14), transparent 22%),
-    linear-gradient(135deg, #f6f1e7 0%, #edf4f2 56%, #f8efe1 100%);
+    radial-gradient(circle at top left, rgba(40, 113, 217, 0.16), transparent 28%),
+    radial-gradient(circle at top right, rgba(15, 95, 198, 0.14), transparent 24%),
+    linear-gradient(140deg, #f8fbff 0%, #eef5ff 58%, #f9fcff 100%);
 }
 
 h1,
 h2,
 h3 {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-body), sans-serif;
 }
 
 a {
@@ -52,13 +52,13 @@ textarea {
   border: 1px solid var(--border);
   background: var(--surface);
   backdrop-filter: blur(18px);
-  box-shadow: 0 22px 80px rgba(9, 17, 31, 0.08);
+  box-shadow: 0 18px 60px rgba(11, 35, 67, 0.1);
 }
 
 .surface-panel {
   border: 1px solid var(--border);
   background: var(--surface-strong);
-  box-shadow: 0 16px 45px rgba(9, 17, 31, 0.08);
+  box-shadow: 0 12px 35px rgba(11, 35, 67, 0.08);
 }
 
 .gradient-border {
@@ -71,7 +71,7 @@ textarea {
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(13, 148, 136, 0.34), rgba(242, 106, 46, 0.28));
+  background: linear-gradient(135deg, rgba(40, 113, 217, 0.42), rgba(15, 95, 198, 0.3));
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -82,9 +82,9 @@ textarea {
 
 .grid-fade {
   background-image:
-    linear-gradient(rgba(9, 17, 31, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(9, 17, 31, 0.05) 1px, transparent 1px);
-  background-size: 34px 34px;
+    linear-gradient(rgba(11, 35, 67, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 35, 67, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
   background-position: center;
 }
 

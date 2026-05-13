@@ -22,7 +22,7 @@ export function AnalyticsPanel({ issues }) {
   return (
     <SectionCard>
       <div className="mb-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
           Analytics
         </p>
         <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">
@@ -39,7 +39,7 @@ export function AnalyticsPanel({ issues }) {
             </div>
             <div className="h-3 overflow-hidden rounded-full bg-slate-100">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-lagoon to-accent"
+                className="h-full rounded-full bg-gradient-to-r from-accent to-lagoon"
                 style={{ width: `${(count / maxCount) * 100}%` }}
               />
             </div>
@@ -60,7 +60,7 @@ export function AnalyticsPanel({ issues }) {
               </div>
               <div className="h-3 overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-ink to-lagoon"
+                  className="h-full rounded-full bg-gradient-to-r from-lagoon to-ink"
                   style={{ width: `${(count / maxDepartmentCount) * 100}%` }}
                 />
               </div>
@@ -77,7 +77,7 @@ export function AnalyticsPanel({ issues }) {
           {Object.entries(priorityCounts).map(([priority, count]) => (
             <div
               key={priority}
-              className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm"
+              className="rounded-xl border border-blue-100 bg-white/90 p-4 text-sm"
             >
               <p className="font-semibold capitalize text-ink">{priority}</p>
               <p className="mt-1 text-slate-500">{count} issues</p>

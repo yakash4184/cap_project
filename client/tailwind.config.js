@@ -8,18 +8,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ink: "#09111f",
-        mist: "#eef4f1",
-        accent: "#f26a2e",
-        lagoon: "#0d9488",
-        sand: "#f4dfb9",
+        ink: "#0b2343",
+        mist: "#eef5ff",
+        accent: "#2871d9",
+        lagoon: "#0f5fc6",
+        sand: "#dce9ff",
       },
       boxShadow: {
-        glow: "0 24px 80px rgba(15, 23, 42, 0.16)",
+        glow: "0 18px 46px rgba(11, 35, 67, 0.18)",
       },
       backgroundImage: {
         mesh:
-          "radial-gradient(circle at 20% 20%, rgba(13, 148, 136, 0.20), transparent 38%), radial-gradient(circle at 80% 0%, rgba(242, 106, 46, 0.18), transparent 28%), linear-gradient(135deg, #f6f1e7 0%, #edf4f2 55%, #f7ede1 100%)",
+          "radial-gradient(circle at 20% 15%, rgba(40, 113, 217, 0.2), transparent 35%), radial-gradient(circle at 85% 0%, rgba(15, 95, 198, 0.16), transparent 30%), linear-gradient(145deg, #f7fbff 0%, #edf5ff 54%, #f5faff 100%)",
       },
       animation: {
         float: "float 8s ease-in-out infinite",
@@ -39,4 +39,3 @@ module.exports = {
   },
   plugins: [],
 };
-
