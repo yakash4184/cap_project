@@ -24,6 +24,19 @@ const AUTH_ERROR_PATTERNS = [
   "User not found",
 ];
 
+const dedupeIssuesById = (issues = []) => {
+  const seen = new Set();
+
+  return issues.filter((issue, index) => {
+    const id = issue?._id ? String(issue._id) : `missing-id-${index}`;
+    if (seen.has(id)) {
+      return false;
+    }
+    seen.add(id);
+    return true;
+  });
+};
+
 function buildStats(issues) {
   return {
     total: issues.length,
@@ -127,7 +140,7 @@ export default function CitizenIssuesPage() {
         ]);
 
         persistSessionUser(meData.user);
-        setIssues(issueData);
+        setIssues(dedupeIssuesById(issueData));
         setNotifications(notificationData);
 
         if (!silent) {
@@ -210,7 +223,7 @@ export default function CitizenIssuesPage() {
         formData,
       });
 
-      setIssues((currentIssues) => [createdIssue, ...currentIssues]);
+      setIssues((currentIssues) => dedupeIssuesById([createdIssue, ...currentIssues]));
       setNotice("Complaint submitted successfully.");
       return true;
     } catch (error) {
@@ -327,6 +340,18 @@ export default function CitizenIssuesPage() {
     return null;
   }
 
+  const handleVerifyImage = async (formData) => {
+    if (!session?.token) {
+      redirectToCitizenLogin();
+      throw new Error("Login required");
+    }
+
+    return issueApi.verifyImage({
+      token: session.token,
+      formData,
+    });
+  };
+
   const visibleIssues =
     filter === "all" ? issues : issues.filter((issue) => issue.status === filter);
   const stats = buildStats(issues);
@@ -384,7 +409,11 @@ export default function CitizenIssuesPage() {
 
       {session?.user?.profileCompleted ? (
         <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <IssueReportForm onSubmit={handleCreateIssue} isSubmitting={isSubmitting} />
+          <IssueReportForm
+            onSubmit={handleCreateIssue}
+            onVerifyImage={handleVerifyImage}
+            isSubmitting={isSubmitting}
+          />
           <NotificationPanel notifications={notifications} onMarkRead={handleMarkRead} />
         </div>
       ) : (

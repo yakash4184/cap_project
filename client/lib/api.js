@@ -115,6 +115,16 @@ export const issueApi = {
         body: formData,
       })
     ),
+  verifyImage: async ({ token, formData }) =>
+    handleResponse(
+      await safeFetch(`${API_BASE_URL}/issues/verify-image`, {
+        method: "POST",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      })
+    ),
   update: async ({ token, issueId, payload }) =>
     handleResponse(
       await safeFetch(`${API_BASE_URL}/issues/update/${issueId}`, {
@@ -196,6 +206,20 @@ export const notificationApi = {
       await safeFetch(`${API_BASE_URL}/notifications/${notificationId}/read`, {
         method: "PUT",
         headers: getJsonHeaders(token),
+      })
+    ),
+};
+
+export const assistantApi = {
+  chat: async ({ token, message, history = [] }) =>
+    handleResponse(
+      await safeFetch(`${API_BASE_URL}/assistant/chat`, {
+        method: "POST",
+        headers: getJsonHeaders(token),
+        body: JSON.stringify({
+          message,
+          history,
+        }),
       })
     ),
 };

@@ -1,10 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  Building2,
   LayoutDashboard,
   LogOut,
   ShieldCheck,
@@ -42,8 +42,15 @@ export function SiteHeader() {
     <header className="sticky top-0 z-30 border-b border-blue-100/80 bg-white/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-lagoon text-white shadow-glow">
-            <Building2 className="h-5 w-5" />
+          <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-blue-200 bg-white shadow-glow">
+            <Image
+              src="/civic-issue-logo.png"
+              alt="Civic Issue Logo"
+              width={48}
+              height={48}
+              className="h-11 w-11 rounded-full object-cover"
+              priority
+            />
           </div>
           <div>
             <p className="font-semibold tracking-tight text-ink">Civic Connect Portal</p>

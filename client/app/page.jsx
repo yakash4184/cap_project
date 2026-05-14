@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowDown,
@@ -7,16 +8,13 @@ import {
   CheckCircle2,
   FileText,
   Files,
-  Handshake,
-  Landmark,
   LogIn,
   MapPinned,
-  ShieldCheck,
   UserPlus,
   Workflow,
 } from "lucide-react";
 
-import { HeroMetrics } from "@/components/hero-metrics";
+import { HeroImageSlider } from "@/components/hero-image-slider";
 import { SectionCard } from "@/components/section-card";
 
 const featureCards = [
@@ -71,67 +69,130 @@ const citizenGuideSteps = [
   },
 ];
 
+const heroSlides = [
+  {
+    src: "/hero-slides/slide-01.png",
+    alt: "Civic Connect Portal parliament view slide",
+    priority: true,
+  },
+  {
+    src: "/hero-slides/slide-02.png",
+    alt: "Civic Connect Portal city highway slide",
+    priority: false,
+  },
+  {
+    src: "/hero-slides/slide-03.png",
+    alt: "Civic Connect Portal village development slide",
+    priority: false,
+  },
+];
+
+const heroRibbonCards = [
+  {
+    title: "Report Civic Issues",
+    subtitle: "Fast complaint intake",
+    icon: FileText,
+  },
+  {
+    title: "Track and Follow",
+    subtitle: "Live status visibility",
+    icon: BellRing,
+  },
+  {
+    title: "Get It Resolved",
+    subtitle: "Department action flow",
+    icon: CheckCircle2,
+  },
+  {
+    title: "Better Communities",
+    subtitle: "City and village coverage",
+    icon: Workflow,
+  },
+];
+
 export default function HomePage() {
   return (
     <main className="overflow-hidden">
-      <section className="relative">
-        <div className="absolute inset-0 grid-fade opacity-55" />
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start lg:px-8 lg:py-16">
-          <div className="relative">
-            <div className="glass-panel relative rounded-3xl p-6 sm:p-8 lg:p-10">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-lagoon sm:text-sm">
-                <Landmark className="h-4 w-4" />
-                Public Service Dashboard
-              </div>
-              <h1 className="max-w-3xl text-3xl font-bold leading-tight tracking-tight text-ink sm:text-5xl">
-                Smart civic issue reporting for citizens and municipal teams.
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-                Raise complaints with location and evidence, route cases to the right
-                departments, and monitor every stage from intake to resolution in one
-                secure platform.
+      <section className="relative border-b border-blue-100/80 bg-white/40">
+        <div className="absolute inset-0 grid-fade opacity-40" />
+        <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-5 sm:px-6 lg:px-8 lg:pb-14">
+          <div className="surface-panel flex items-center gap-3 rounded-2xl px-4 py-3 sm:gap-4 sm:px-5">
+            <div className="flex h-14 w-12 items-center justify-center sm:h-16 sm:w-14">
+              <Image
+                src="/ashok-stambh.svg"
+                alt="Ashok Stambh"
+                width={56}
+                height={88}
+                className="h-full w-auto object-contain grayscale contrast-200"
+                priority
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 sm:text-xs">
+                Government Interface
               </p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Link
-                  href="/login?next=/issues"
-                  className="inline-flex items-center gap-2 rounded-full bg-lagoon px-6 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-blue-700"
-                >
-                  Launch Portal
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  href="/login?next=/admin&role=admin"
-                  className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-lagoon hover:text-lagoon"
-                >
-                  View Admin UI
-                </Link>
-              </div>
-
-              <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-blue-100 bg-white/85 p-4">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-ink">
-                    <ShieldCheck className="h-4 w-4 text-lagoon" />
-                    Verified action trail
-                  </div>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Track who updated what, and when, across every reported issue.
-                  </p>
-                </div>
-                <div className="rounded-xl border border-blue-100 bg-white/85 p-4">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-ink">
-                    <Handshake className="h-4 w-4 text-lagoon" />
-                    Citizen transparency
-                  </div>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Keep residents informed with status notifications and clear timelines.
-                  </p>
-                </div>
-              </div>
+              <p className="truncate text-sm font-bold tracking-tight text-ink sm:text-base">
+                Civic Connect Portal - Public Service Dashboard
+              </p>
             </div>
           </div>
 
-          <div className="self-start">
-            <HeroMetrics />
+          <div className="mt-4 overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-glow">
+            <div className="relative aspect-[1774/887] min-h-[340px] sm:min-h-[420px] lg:min-h-[560px]">
+              <HeroImageSlider slides={heroSlides} intervalMs={2000} className="absolute inset-0 h-full w-full" />
+              <div className="absolute inset-0 bg-gradient-to-r from-ink/70 via-ink/30 to-transparent" />
+
+              <div className="relative z-10 flex h-full items-end p-4 sm:p-6 lg:items-center lg:p-10">
+                <div className="max-w-2xl rounded-2xl border border-white/25 bg-white/18 p-4 text-white backdrop-blur-md sm:p-6 lg:p-8">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-100 sm:text-xs">
+                    Citizen Governance Platform
+                  </p>
+                  <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+                    Smart civic issue reporting for citizens and municipal teams.
+                  </h1>
+                  <p className="mt-3 text-sm leading-6 text-blue-50 sm:text-base sm:leading-7">
+                    Raise complaints with exact location and evidence, then track every
+                    update till resolution with secure citizen and admin workflows.
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <Link
+                      href="/login?next=/issues"
+                      className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-blue-100"
+                    >
+                      Launch Portal
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                    <Link
+                      href="/login?next=/admin&role=admin"
+                      className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-transparent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+                    >
+                      View Admin UI
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-px bg-blue-900/35 sm:grid-cols-2 lg:grid-cols-4">
+              {heroRibbonCards.map((card) => {
+                const Icon = card.icon;
+
+                return (
+                  <div
+                    key={card.title}
+                    className="flex items-center gap-3 bg-blue-900 px-4 py-4 text-white sm:px-5"
+                  >
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/30 bg-white/10">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold tracking-tight">{card.title}</p>
+                      <p className="text-xs text-blue-100">{card.subtitle}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>

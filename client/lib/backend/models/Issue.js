@@ -67,6 +67,41 @@ const issueSchema = new mongoose.Schema(
       enum: ["low", "medium", "high", "critical"],
       default: "medium",
     },
+    aiVerification: {
+      status: {
+        type: String,
+        enum: ["verified", "suspicious", "needs-review", "unavailable"],
+        default: "needs-review",
+      },
+      confidence: {
+        type: Number,
+        default: 0,
+      },
+      matchesCategory: {
+        type: Boolean,
+        default: null,
+      },
+      detectedContext: {
+        type: String,
+        default: "",
+      },
+      summary: {
+        type: String,
+        default: "",
+      },
+      reasons: {
+        type: [String],
+        default: [],
+      },
+      checkedAt: {
+        type: Date,
+        default: null,
+      },
+      model: {
+        type: String,
+        default: "",
+      },
+    },
     reportedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

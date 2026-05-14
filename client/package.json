@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "rm -rf .next && next dev",
-    "build": "next build",
+    "dev": "rm -rf .next .next-dev .next-prod && next dev",
+    "build": "rm -rf .next .next-dev .next-prod && next build",
     "start": "next start"
   },
   "dependencies": {

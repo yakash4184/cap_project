@@ -46,6 +46,19 @@ const AUTH_ERROR_PATTERNS = [
   "User not found",
 ];
 
+const dedupeIssuesById = (issues = []) => {
+  const seen = new Set();
+
+  return issues.filter((issue, index) => {
+    const id = issue?._id ? String(issue._id) : `missing-id-${index}`;
+    if (seen.has(id)) {
+      return false;
+    }
+    seen.add(id);
+    return true;
+  });
+};
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [session, setSession] = useState(null);
@@ -128,7 +141,7 @@ export default function AdminDashboardPage() {
         ]);
 
         setStats(liveStats);
-        setIssues(liveIssues);
+        setIssues(dedupeIssuesById(liveIssues));
         if (!silent) {
           setNotice("");
         }
@@ -170,7 +183,7 @@ export default function AdminDashboardPage() {
         filters,
       });
 
-      setIssues(filteredIssues);
+      setIssues(dedupeIssuesById(filteredIssues));
       setSelectedIds([]);
       setNotice("");
     } catch (error) {
@@ -224,7 +237,7 @@ export default function AdminDashboardPage() {
       ]);
 
       setStats(liveStats);
-      setIssues(liveIssues);
+      setIssues(dedupeIssuesById(liveIssues));
       setSelectedIds([]);
       setNotice("Bulk update completed.");
     } catch (error) {
@@ -289,7 +302,7 @@ export default function AdminDashboardPage() {
       ]);
 
       setStats(liveStats);
-      setIssues(liveIssues);
+      setIssues(dedupeIssuesById(liveIssues));
       setActiveIssue(null);
       setSelectedIds((currentIds) => currentIds.filter((id) => id !== issue._id));
       setNotice("Issue deleted successfully.");
@@ -568,6 +581,7 @@ export default function AdminDashboardPage() {
         issues={issues}
         showSelection
         showReporterDetails
+        showEvidencePreview
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
         onToggleAll={handleToggleAll}

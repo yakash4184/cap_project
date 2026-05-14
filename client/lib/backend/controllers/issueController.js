@@ -8,6 +8,7 @@ import {
   sendComplaintRegisteredEmail,
   sendComplaintResolvedEmail,
 } from "../services/emailService.js";
+import { verifyIssueEvidenceWithAI } from "../services/imageVerificationService.js";
 import { calculatePriority, resolveDepartment } from "../utils/issueMetadata.js";
 import {
   parseIssueCoordinates,
@@ -115,6 +116,14 @@ export const createIssue = async (req, res, next) => {
       });
     }
 
+    const aiVerification = await verifyIssueEvidenceWithAI({
+      category,
+      title,
+      description,
+      imageUrl: uploadedImageUrl,
+      file: req.file,
+    });
+
     const issue = await Issue.create({
       title,
       description,
@@ -130,6 +139,7 @@ export const createIssue = async (req, res, next) => {
         address: address || "",
       },
       reportedBy: req.user._id,
+      aiVerification,
       statusTimeline: [
         {
           status: "pending",
@@ -156,6 +166,24 @@ export const createIssue = async (req, res, next) => {
 
     emitIssueUpdated(populatedIssue);
     res.status(201).json(populatedIssue);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyIssueImageEvidence = async (req, res, next) => {
+  try {
+    const { title, description, category, imageUrl } = req.body;
+
+    const verification = await verifyIssueEvidenceWithAI({
+      category,
+      title,
+      description,
+      imageUrl,
+      file: req.file,
+    });
+
+    res.json(verification);
   } catch (error) {
     next(error);
   }

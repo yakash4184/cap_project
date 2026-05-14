@@ -15,6 +15,7 @@ export function IssueEditorModal({
   isDeleting = false,
 }) {
   const [formState, setFormState] = useState(null);
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
 
   useEffect(() => {
     if (!issue) {
@@ -32,6 +33,7 @@ export function IssueEditorModal({
       lng: String(issue.location?.lng ?? ""),
       imageUrl: issue.imageUrl || "",
     });
+    setImageLoadFailed(false);
   }, [issue]);
 
   if (!issue || !formState) {
@@ -172,10 +174,42 @@ export function IssueEditorModal({
             <input
               value={formState.imageUrl}
               disabled={!canEditCoreFields}
-              onChange={(event) => updateField("imageUrl", event.target.value)}
+              onChange={(event) => {
+                updateField("imageUrl", event.target.value);
+                setImageLoadFailed(false);
+              }}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 disabled:bg-slate-50"
             />
           </label>
+
+          {formState.imageUrl ? (
+            <div className="md:col-span-2 rounded-2xl border border-blue-100 bg-white p-3">
+              <div className="overflow-hidden rounded-xl border border-blue-100 bg-slate-50">
+                {imageLoadFailed ? (
+                  <div className="grid h-52 place-items-center px-4 text-center text-sm text-slate-500">
+                    Unable to preview this image. Use the link below to open it in a new tab.
+                  </div>
+                ) : (
+                  <img
+                    src={formState.imageUrl}
+                    alt="Complaint evidence"
+                    className="h-52 w-full object-contain"
+                    loading="lazy"
+                    decoding="async"
+                    onError={() => setImageLoadFailed(true)}
+                  />
+                )}
+              </div>
+              <a
+                href={formState.imageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex text-xs font-semibold text-lagoon hover:text-blue-700"
+              >
+                Open full image
+              </a>
+            </div>
+          ) : null}
 
           <label className="md:col-span-2">
             <span className="mb-2 block text-sm font-medium text-slate-600">Status</span>
